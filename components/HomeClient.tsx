@@ -13,6 +13,7 @@ import {
   FeatureCard,
   AboutData,
   HeroData,
+  CommunityStory,
 } from "@/utils/dataStore";
 
 function HeroInteractiveBackground({
@@ -76,6 +77,14 @@ export default function HomeClient() {
   const [aiFeatures, setAiFeatures] = useState<FeatureCard[]>([]);
   const [about, setAbout] = useState<AboutData | null>(null);
   const [hero, setHero] = useState<HeroData | null>(null);
+  const [communityStories, setCommunityStories] = useState<CommunityStory[]>(
+    [],
+  );
+  const [activeStoryMedia, setActiveStoryMedia] = useState<
+    "scholarship" | "kickball"
+  >("scholarship");
+  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
+  const [isPlayingVideo, setIsPlayingVideo] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isQuizPopupOpen, setIsQuizPopupOpen] = useState(false);
   const [isQuizTriggerVisible, setIsQuizTriggerVisible] = useState(false);
@@ -114,6 +123,9 @@ export default function HomeClient() {
     setAiFeatures(dataStore.getAIInnovation());
     setAbout(dataStore.getAbout());
     setHero(dataStore.getHero());
+    setCommunityStories(
+      dataStore.getCommunityStories().filter((s) => s.status === "published"),
+    );
     setIsMounted(true);
   }, []);
 
@@ -289,10 +301,22 @@ export default function HomeClient() {
         <HeroCanvas />
 
         <RevealOnMount direction="up" className="hero-container">
+          {/* Prominent Business Name & Credential Banner */}
+          <div className="hero-brand-badge mb-3 sm:mb-4 inline-flex items-center gap-2.5 px-4 py-1.5 sm:py-2 rounded-full border border-[rgba(225,77,24,0.3)]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] animate-pulse shrink-0"></span>
+            <span className="text-xs sm:text-sm font-bold tracking-wider uppercase font-[family-name:var(--font-space-grotesk)] text-[var(--primary)]">
+              THE INFERNO GROUP LLC
+            </span>
+            <span className="hidden sm:inline-block text-[0.72rem] text-[var(--text-muted)] font-mono pl-2 border-l border-[var(--border)]">
+              UEI: QW6RHJACHA56 • HUBZone &amp; VOSB Certified
+            </span>
+          </div>
+
           <div className="hero-eyebrow">
             <TypewriterText
               text={
-                hero?.eyebrow || "Government Consulting & Emergency Management"
+                hero?.eyebrow ||
+                "Emergency Management & Small Business Strategic Advisory"
               }
               speed={35}
               delay={400}
@@ -307,7 +331,7 @@ export default function HomeClient() {
           </h1>
           <p className="hero-sub">
             {hero?.subheadline ||
-              "The Inferno Group LLC delivers full-scale government consulting—from emergency disaster recovery and individual/public assistance to contract compliance and strategic business development—engineered for missions that demand absolute execution."}
+              "The Inferno Group LLC delivers end-to-end operational readiness and strategic consulting. From federal disaster recovery and Stafford Act compliance to strategic planning and revenue scaling for independent and small businesses."}
           </p>
           <div className="hero-actions">
             <Link
@@ -330,13 +354,37 @@ export default function HomeClient() {
               </svg>
             </Link>
             <Link
-              href={hero?.ctaLink2 || "/partnerships"}
+              href="/services#strategic-consulting-and-operational-excellence"
               className="btn btn-glass-secondary no-underline"
+            >
+              Small Business Advisory
+            </Link>
+            <Link
+              href={hero?.ctaLink2 || "/partnerships"}
+              className="btn btn-secondary no-underline"
             >
               {hero?.ctaText2 || "Partner With Us"}
             </Link>
           </div>
         </RevealOnMount>
+
+        {/* Office Background Location Badge */}
+        <div className="office-location-tag">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--primary)"
+            strokeWidth="2.5"
+          >
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <span>
+            TIG Emergency Operations &amp; Command Center • Orlando, FL
+          </span>
+        </div>
       </section>
 
       {/* STATISTICS STRIP (Scroll Animated) */}
@@ -421,6 +469,226 @@ export default function HomeClient() {
                 </p>
               </div>
             </div>
+          </div>
+        </RevealOnMount>
+      </section>
+
+      {/* CORE CAPABILITIES & DUAL PILLAR SOLUTIONS SHOWCASE */}
+      <section
+        id="home-services"
+        className="py-24 px-[5vw] border-b border-[var(--border)] bg-[var(--background)]"
+      >
+        <RevealOnMount direction="up">
+          <div className="text-center max-w-[850px] mx-auto mb-16">
+            <div className="section-eyebrow">
+              <TypewriterText
+                text="Solutions & Capabilities"
+                speed={40}
+                delay={200}
+              />
+            </div>
+            <h2 className="section-title">
+              Dual-Pillar Operational Excellence
+            </h2>
+            <p className="section-desc mt-3">
+              The Inferno Group bridges the gap between high-stakes emergency
+              command and sustainable commercial growth. We stand as a proven
+              disaster recovery partner for government agencies and a strategic
+              advisory force helping independent and small businesses scale
+              revenue.
+            </p>
+          </div>
+        </RevealOnMount>
+
+        {/* Dual Pillar Highlight Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Pillar 1: Emergency Management & Disaster Recovery */}
+          <RevealOnMount direction="left" delay={100}>
+            <div className="glow-card h-full p-8 md:p-10 rounded-[24px] bg-[var(--glass)] border border-[var(--border)] flex flex-col justify-between relative overflow-hidden group hover:border-[rgba(225,77,24,0.4)] transition-all">
+              <div className="absolute top-0 right-0 w-36 h-36 bg-[rgba(225,77,24,0.06)] rounded-full blur-2xl pointer-events-none"></div>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[var(--primary)] px-3 py-1 rounded-full bg-[rgba(225,77,24,0.08)] border border-[rgba(225,77,24,0.2)]">
+                    Public Sector &amp; Federal Core
+                  </span>
+                  <span className="font-mono text-xs text-[var(--text-muted)] font-semibold">
+                    Pillar 01
+                  </span>
+                </div>
+                <h3 className="font-[family-name:var(--font-space-grotesk)] text-[1.65rem] font-bold text-[var(--text-bright)] mb-3 leading-snug">
+                  Emergency Management &amp; Disaster Recovery
+                </h3>
+                <p className="text-[var(--text-muted)] text-[0.92rem] leading-[1.7] mb-6">
+                  Our operational bedrock: 24/7 disaster response coordination,
+                  FEMA Public &amp; Individual Assistance formulation, Category
+                  A debris monitoring, Stafford Act audit compliance, and rapid
+                  workforce deployments.
+                </p>
+
+                <div className="space-y-2.5 mb-8">
+                  {[
+                    "FEMA PA/IA Formulation & 2 CFR Part 200 Grant Compliance",
+                    "Emergency Operations Center (EOC) Command & Incident Staffing",
+                    "Category A Debris Monitoring, Verification & Disposal Logging",
+                    "Rapid Field Cadre Mobilization & Surge Response Teams",
+                  ].map((feat, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2.5 text-xs text-[var(--text-main)]"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-[rgba(225,77,24,0.1)] text-[var(--primary)] flex items-center justify-center shrink-0">
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="12"
+                          height="12"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </div>
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-[var(--border)] flex flex-wrap gap-4 items-center justify-between">
+                <Link
+                  href="/services/emergency-management-and-disaster-recovery"
+                  className="btn btn-primary no-underline text-xs inline-flex items-center gap-2"
+                >
+                  Explore Emergency Scopes
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </Link>
+                <Link
+                  href="/tracker"
+                  className="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--primary)] transition-colors"
+                >
+                  Live Hurricane Tracker &rarr;
+                </Link>
+              </div>
+            </div>
+          </RevealOnMount>
+
+          {/* Pillar 2: Strategic Planning for Independent & Small Businesses */}
+          <RevealOnMount direction="right" delay={200}>
+            <div className="glow-card h-full p-8 md:p-10 rounded-[24px] bg-[var(--glass)] border border-[rgba(26,86,196,0.3)] flex flex-col justify-between relative overflow-hidden group hover:border-[var(--secondary)] transition-all">
+              <div className="absolute top-0 right-0 w-36 h-36 bg-[rgba(26,86,196,0.08)] rounded-full blur-2xl pointer-events-none"></div>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[0.7rem] font-bold uppercase tracking-wider text-[var(--secondary)] px-3 py-1 rounded-full bg-[rgba(26,86,196,0.08)] border border-[rgba(26,86,196,0.25)]">
+                    Commercial Growth &amp; Revenue Focus
+                  </span>
+                  <span className="font-mono text-xs text-[var(--text-muted)] font-semibold">
+                    Pillar 02
+                  </span>
+                </div>
+                <h3 className="font-[family-name:var(--font-space-grotesk)] text-[1.65rem] font-bold text-[var(--text-bright)] mb-3 leading-snug">
+                  Strategic Planning &amp; Small Business Advisory
+                </h3>
+                <p className="text-[var(--text-muted)] text-[0.92rem] leading-[1.7] mb-6">
+                  Engineered to generate new revenue and resilience: strategic
+                  growth roadmaps, operational workflow optimization, commercial
+                  business continuity, and SBA teaming to win lucrative public
+                  and private contracts.
+                </p>
+
+                <div className="space-y-2.5 mb-8">
+                  {[
+                    "Strategic Growth & Revenue Scaling for Small Businesses",
+                    "Business Process Engineering & Workflow Streamlining",
+                    "SBA Teaming, Joint Pursuits & B2G Capture (HUBZone / VOSB)",
+                    "Commercial Business Continuity & Crisis Risk Mitigation",
+                  ].map((feat, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2.5 text-xs text-[var(--text-main)]"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-[rgba(26,86,196,0.1)] text-[var(--secondary)] flex items-center justify-center shrink-0">
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="12"
+                          height="12"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </div>
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-[var(--border)] flex flex-wrap gap-4 items-center justify-between">
+                <Link
+                  href="/services/strategic-consulting-and-operational-excellence"
+                  className="btn btn-secondary no-underline text-xs inline-flex items-center gap-2"
+                >
+                  Explore Small Business Advisory
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </Link>
+                <Link
+                  href="/calendar"
+                  className="text-xs font-semibold text-[var(--secondary)] hover:underline"
+                >
+                  Book Strategic Consultation &rarr;
+                </Link>
+              </div>
+            </div>
+          </RevealOnMount>
+        </div>
+
+        {/* Quick Service Categories Bar */}
+        <RevealOnMount direction="up" delay={250}>
+          <div className="p-6 rounded-2xl bg-[var(--panel-dark)] border border-[var(--border)] flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-bold text-[var(--text-bright)] uppercase tracking-wider font-[family-name:var(--font-space-grotesk)]">
+                Full Service Spectrum:
+              </span>
+              <span className="text-xs px-3 py-1 rounded-md bg-[var(--glass)] border border-[var(--border)] text-[var(--text-muted)]">
+                Incident Management (ICS/NIMS)
+              </span>
+              <span className="text-xs px-3 py-1 rounded-md bg-[var(--glass)] border border-[var(--border)] text-[var(--text-muted)]">
+                Contact Center &amp; Survivor Helpline
+              </span>
+              <span className="text-xs px-3 py-1 rounded-md bg-[var(--glass)] border border-[var(--border)] text-[var(--text-muted)]">
+                DCAA &amp; Financial Controls
+              </span>
+              <span className="text-xs px-3 py-1 rounded-md bg-[var(--glass)] border border-[var(--border)] text-[var(--text-muted)]">
+                Cadre Workforce Development
+              </span>
+            </div>
+            <Link
+              href="/services"
+              className="text-xs font-bold text-[var(--primary)] hover:underline shrink-0 flex items-center gap-1.5"
+            >
+              View All 7 Capabilities &rarr;
+            </Link>
           </div>
         </RevealOnMount>
       </section>
@@ -588,35 +856,69 @@ export default function HomeClient() {
                 needed most.
               </p>
               <div className="space-y-4 mb-8">
-                <div className="flex items-start gap-3 bg-[var(--glass)] p-4 rounded-xl border border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveStoryMedia("kickball");
+                    setIsPlayingVideo(false);
+                  }}
+                  className={`w-full text-left flex items-start gap-3 p-4 rounded-xl border transition-all ${
+                    activeStoryMedia === "kickball"
+                      ? "bg-[rgba(225,77,24,0.06)] border-[var(--primary)] shadow-sm"
+                      : "bg-[var(--glass)] border-[var(--border)] hover:border-[rgba(225,77,24,0.3)]"
+                  }`}
+                >
                   <div className="w-8 h-8 rounded-lg bg-[rgba(225,77,24,0.1)] text-[var(--primary)] flex items-center justify-center shrink-0 font-bold text-xs">
                     01
                   </div>
                   <div>
-                    <h4 className="font-[family-name:var(--font-space-grotesk)] font-bold text-sm text-[var(--text-bright)]">
-                      Kicking for Relief
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-[family-name:var(--font-space-grotesk)] font-bold text-sm text-[var(--text-bright)]">
+                        Kicking for Relief Kickball Tournament
+                      </h4>
+                      <span className="text-[0.62rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[rgba(225,77,24,0.1)] text-[var(--primary)]">
+                        Relief Sports
+                      </span>
+                    </div>
                     <p className="text-xs text-[var(--text-muted)] mt-1">
-                      Disaster relief kickball tournament raising funds for
-                      families affected by Asheville, NC flooding.
+                      Charity kickball tournament bringing community teams
+                      together to raise direct disaster relief aid for
+                      storm-displaced families.
                     </p>
                   </div>
-                </div>
+                </button>
 
-                <div className="flex items-start gap-3 bg-[var(--glass)] p-4 rounded-xl border border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveStoryMedia("scholarship");
+                    setIsPlayingVideo(false);
+                  }}
+                  className={`w-full text-left flex items-start gap-3 p-4 rounded-xl border transition-all ${
+                    activeStoryMedia === "scholarship"
+                      ? "bg-[rgba(26,86,196,0.06)] border-[var(--secondary)] shadow-sm"
+                      : "bg-[var(--glass)] border-[var(--border)] hover:border-[rgba(26,86,196,0.3)]"
+                  }`}
+                >
                   <div className="w-8 h-8 rounded-lg bg-[rgba(26,86,196,0.08)] text-[var(--secondary)] flex items-center justify-center shrink-0 font-bold text-xs">
                     02
                   </div>
                   <div>
-                    <h4 className="font-[family-name:var(--font-space-grotesk)] font-bold text-sm text-[var(--text-bright)]">
-                      The Inferno Flame Scholarship
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-[family-name:var(--font-space-grotesk)] font-bold text-sm text-[var(--text-bright)]">
+                        The Inferno Ignite Scholarship
+                      </h4>
+                      <span className="text-[0.62rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[rgba(26,86,196,0.1)] text-[var(--secondary)]">
+                        Higher Ed
+                      </span>
+                    </div>
                     <p className="text-xs text-[var(--text-muted)] mt-1">
-                      Awarding $500 book scholarships to Orlando-area high
-                      school seniors preparing for four-year universities.
+                      Awarding academic book stipends and educational
+                      micro-grants to Orlando-area high school seniors preparing
+                      for four-year universities.
                     </p>
                   </div>
-                </div>
+                </button>
               </div>
 
               <div className="flex flex-wrap items-center gap-4">
@@ -635,19 +937,194 @@ export default function HomeClient() {
               </div>
             </div>
 
-            <div className="glow-card bg-[var(--glass)] border border-[var(--border)] rounded-[24px] p-8 flex flex-col gap-4">
-              <h4 className="font-[family-name:var(--font-space-grotesk)] text-[1.2rem] font-bold text-[var(--text-bright)]">
-                Our Commitment to Community
-              </h4>
-              <p className="text-xs text-[var(--text-muted)] leading-[1.6]">
-                Expanding impact across the Greater Orlando metropolitan area in
-                youth development, disaster resilience, essential needs, veteran
-                support, and volunteer service projects.
-              </p>
-              <div className="p-4 rounded-xl bg-[rgba(225,77,24,0.04)] border border-[var(--border)] text-xs italic text-[var(--text-muted)]">
-                &ldquo;Stronger communities create stronger futures. At TIG,
-                service does not stop when the contract ends.&rdquo;
+            {/* INTERACTIVE MEDIA SPOTLIGHT (PHOTOS & VIDEO) */}
+            <div className="glow-card bg-[var(--glass)] border border-[var(--border)] rounded-[24px] p-6 md:p-8 flex flex-col gap-5">
+              <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-bright)] font-[family-name:var(--font-space-grotesk)]">
+                  {activeStoryMedia === "scholarship"
+                    ? "Ignite Scholarship Media"
+                    : "Kickball Tournament Media"}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveStoryMedia("scholarship");
+                      setIsPlayingVideo(false);
+                    }}
+                    className={`px-3 py-1 rounded-full text-[0.7rem] font-bold transition-all ${
+                      activeStoryMedia === "scholarship"
+                        ? "bg-[var(--secondary)] text-white shadow-xs"
+                        : "bg-[var(--panel-dark)] text-[var(--text-muted)] hover:text-[var(--text-bright)]"
+                    }`}
+                  >
+                    Scholarship
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveStoryMedia("kickball");
+                      setIsPlayingVideo(false);
+                    }}
+                    className={`px-3 py-1 rounded-full text-[0.7rem] font-bold transition-all ${
+                      activeStoryMedia === "kickball"
+                        ? "bg-[var(--primary)] text-white shadow-xs"
+                        : "bg-[var(--panel-dark)] text-[var(--text-muted)] hover:text-[var(--text-bright)]"
+                    }`}
+                  >
+                    Kickball
+                  </button>
+                </div>
               </div>
+
+              {activeStoryMedia === "scholarship" ? (
+                <div className="flex flex-col gap-4">
+                  {/* Video & Ceremony Presentation */}
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-[var(--border)] shadow-md group">
+                    {isPlayingVideo ? (
+                      <video
+                        src="/scholarship_video.mp4"
+                        controls
+                        autoPlay
+                        className="w-full h-full object-cover"
+                      >
+                        Your browser does not support HTML video.
+                      </video>
+                    ) : (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={
+                            activePhotoIdx === 0
+                              ? "/scholarship_ceremony.png"
+                              : "/impact_debris.png"
+                          }
+                          alt="The Inferno Ignite Scholarship Recipients"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              "/impact_debris.png";
+                          }}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-5">
+                          <span className="text-[0.65rem] font-bold uppercase tracking-wider text-white/80 mb-1">
+                            Inferno Ignite Academic Awards
+                          </span>
+                          <h4 className="text-white text-base font-bold leading-tight mb-3 font-[family-name:var(--font-space-grotesk)]">
+                            Investing in Tomorrow&apos;s Scholars
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => setIsPlayingVideo(true)}
+                            className="inline-flex items-center gap-2 self-start px-3.5 py-1.5 rounded-full bg-[var(--primary)] text-white text-xs font-bold hover:bg-[#c93f10] shadow-md transition-all"
+                          >
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                            >
+                              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            Watch Scholarship Video
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Scholarship Photo Thumbnails */}
+                  <div>
+                    <span className="text-[0.7rem] font-bold text-[var(--text-muted)] uppercase tracking-wider block mb-2">
+                      Event Photo Gallery
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        {
+                          label: "Award Ceremony",
+                          src: "/scholarship_ceremony.png",
+                          fallback: "/impact_debris.png",
+                        },
+                        {
+                          label: "Recipients",
+                          src: "/scholarship_recipients.png",
+                          fallback: "/logo.jpeg",
+                        },
+                        {
+                          label: "Book Grants",
+                          src: "/scholarship_handout.png",
+                          fallback: "/impact_debris.png",
+                        },
+                      ].map((thumb, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setActivePhotoIdx(idx);
+                            setIsPlayingVideo(false);
+                          }}
+                          className={`relative rounded-lg overflow-hidden border aspect-video transition-all ${
+                            activePhotoIdx === idx && !isPlayingVideo
+                              ? "border-[var(--secondary)] ring-2 ring-[var(--secondary)]/30"
+                              : "border-[var(--border)] opacity-75 hover:opacity-100"
+                          }`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={thumb.src}
+                            alt={thumb.label}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src =
+                                thumb.fallback;
+                            }}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {/* Kickball Tournament Card */}
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-[var(--border)] shadow-md group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/kickball_tournament.png"
+                      alt="Kicking for Relief Charity Kickball Tournament"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          "/impact_texas.png";
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5">
+                      <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[var(--primary)] mb-1">
+                        Disaster Relief Tournament
+                      </span>
+                      <h4 className="text-white text-base font-bold leading-tight font-[family-name:var(--font-space-grotesk)]">
+                        Kicking for Relief Annual Fundraiser
+                      </h4>
+                      <p className="text-white/80 text-xs mt-1">
+                        Uniting businesses, emergency leaders, and volunteers to
+                        raise critical funds for disaster-affected families.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-[rgba(225,77,24,0.05)] border border-[rgba(225,77,24,0.15)] flex items-center justify-between text-xs">
+                    <span className="text-[var(--text-bright)] font-semibold">
+                      Subcategory: Community Disaster Resilience
+                    </span>
+                    <Link
+                      href="/about#about-impact"
+                      className="text-[var(--primary)] font-bold hover:underline"
+                    >
+                      View Details &rarr;
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </RevealOnMount>

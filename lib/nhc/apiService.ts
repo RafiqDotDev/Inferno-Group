@@ -1,5 +1,15 @@
 import AdmZip from "adm-zip";
-import { DetailedStorm, StormCategoryType, BasinType, ForecastPoint, HistoricalTrackPoint, WatchWarningArea, StormImpacts, DisturbanceArea } from "./types";
+import {
+  DetailedStorm,
+  StormCategoryType,
+  BasinType,
+  ForecastPoint,
+  HistoricalTrackPoint,
+  WatchWarningArea,
+  StormImpacts,
+  DisturbanceArea,
+  TRACKER_UPDATE_INTERVAL_SECONDS,
+} from "./types";
 
 
 const CURRENT_STORMS_URL = "https://www.nhc.noaa.gov/CurrentStorms.json";
@@ -44,7 +54,7 @@ async function fetchTextUrl(url?: string): Promise<string | null> {
       headers: {
         "User-Agent": "InfernoGroup-HurricaneDashboard/2.0",
       },
-      next: { revalidate: 300 },
+      next: { revalidate: TRACKER_UPDATE_INTERVAL_SECONDS },
     });
     clearTimeout(timeoutId);
     if (!res.ok) return null;
@@ -65,7 +75,7 @@ async function fetchKmzKmlText(url?: string): Promise<string | null> {
       headers: {
         "User-Agent": "InfernoGroup-HurricaneDashboard/2.0",
       },
-      next: { revalidate: 300 },
+      next: { revalidate: TRACKER_UPDATE_INTERVAL_SECONDS },
     });
     clearTimeout(timeoutId);
     if (!res.ok) return null;
@@ -102,7 +112,7 @@ async function fetchMapServerWatchesWarnings(binNumber?: string): Promise<WatchW
     const res = await fetch(url, {
       signal: controller.signal,
       headers: { "User-Agent": "InfernoGroup-HurricaneDashboard/2.0" },
-      next: { revalidate: 300 },
+      next: { revalidate: TRACKER_UPDATE_INTERVAL_SECONDS },
     });
     clearTimeout(timeoutId);
     if (!res.ok) return [];
@@ -140,7 +150,7 @@ async function fetchMapServerWatchesWarnings(binNumber?: string): Promise<WatchW
   }
 }
 
-export async function fetchRawStorms() {
+export async function fetchRawStorms(forceRefresh = false) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
   try {
@@ -149,7 +159,9 @@ export async function fetchRawStorms() {
       headers: {
         "User-Agent": "InfernoGroup-HurricaneDashboard/2.0 (contact: ops@infernogroup.com)",
       },
-      next: { revalidate: 0 },
+      ...(forceRefresh
+        ? { cache: "no-store" as const }
+        : { next: { revalidate: TRACKER_UPDATE_INTERVAL_SECONDS } }),
     });
     clearTimeout(timeoutId);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -520,7 +532,7 @@ export async function fetchTropicalDisturbances(basin = "atlc", days = "7"): Pro
     const res = await fetch(url, {
       signal: controller.signal,
       headers: { "User-Agent": "InfernoGroup-HurricaneDashboard/2.0" },
-      next: { revalidate: 300 },
+      next: { revalidate: TRACKER_UPDATE_INTERVAL_SECONDS },
     });
     clearTimeout(timeoutId);
 

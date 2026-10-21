@@ -18,6 +18,8 @@ export default function AboutClient() {
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [stories, setStories] = useState<CommunityStory[]>([]);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [playingVideoStoryId, setPlayingVideoStoryId] = useState<string | null>(null);
+  const [selectedStoryPhotos, setSelectedStoryPhotos] = useState<Record<string, number>>({});
 
   // Selected team member for modal detail view
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
@@ -685,6 +687,11 @@ export default function AboutClient() {
         <div className="flex flex-col gap-12 mb-16">
           {stories.map((story, idx) => {
             const isEven = idx % 2 === 0;
+            const currentPhotoIdx = selectedStoryPhotos[story.id] ?? 0;
+            const galleryList = story.gallery && story.gallery.length > 0 ? story.gallery : [story.image];
+            const currentImg = galleryList[currentPhotoIdx] || story.image;
+            const isVideoActive = playingVideoStoryId === story.id;
+
             return (
               <RevealOnMount
                 key={story.id}
@@ -692,27 +699,105 @@ export default function AboutClient() {
                 delay={idx * 150}
               >
                 <div className="glow-card grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] bg-[var(--glass)] border border-[var(--border)] rounded-[24px] p-8 md:p-10 gap-10 md:gap-12 items-center">
-                  <div
-                    className={`relative w-full aspect-video rounded-2xl overflow-hidden bg-[var(--panel-dark)] border border-[var(--border)] shadow-md ${isEven ? "order-0" : "order-1"}`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={
-                        story.image.startsWith("data:") ||
-                        story.image.startsWith("/")
-                          ? story.image
-                          : "/hero-bg.jpg"
-                      }
-                      alt={story.title}
-                      className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                    />
-                  </div>
-                  <div>
-                    {story.featured && (
-                      <span className="service-badge py-1 px-3 text-[0.68rem] bg-[rgba(225,77,24,0.08)] text-[var(--primary)] border border-[rgba(225,77,24,0.2)] rounded-full mb-3 inline-block font-bold uppercase tracking-wider">
-                        Inferno Cares Initiative
-                      </span>
+                  <div className={`flex flex-col gap-3 ${isEven ? "order-0" : "order-1"}`}>
+                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black border border-[var(--border)] shadow-md group">
+                      {isVideoActive && story.videoUrl ? (
+                        <video
+                          src={story.videoUrl}
+                          controls
+                          autoPlay
+                          className="w-full h-full object-cover"
+                        >
+                          Your browser does not support HTML5 video.
+                        </video>
+                      ) : (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={
+                              currentImg.startsWith("data:") ||
+                              currentImg.startsWith("/")
+                                ? currentImg
+                                : "/hero-bg.jpg"
+                            }
+                            alt={story.title}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src =
+                                story.id.includes("scholarship")
+                                  ? "/impact_debris.png"
+                                  : "/impact_texas.png";
+                            }}
+                            className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                          />
+                          {story.videoUrl && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none group-hover:bg-black/50 transition-colors">
+                              <button
+                                type="button"
+                                onClick={() => setPlayingVideoStoryId(story.id)}
+                                className="pointer-events-auto px-4 py-2 rounded-full bg-[var(--primary)] text-white text-xs font-bold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                                Play Video
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Thumbnail gallery if multiple photos */}
+                    {galleryList.length > 1 && (
+                      <div className="flex items-center gap-2 pt-1">
+                        {galleryList.map((photo, pIdx) => (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => {
+                              setSelectedStoryPhotos((prev) => ({
+                                ...prev,
+                                [story.id]: pIdx,
+                              }));
+                              setPlayingVideoStoryId(null);
+                            }}
+                            className={`w-16 h-10 rounded-lg overflow-hidden border transition-all ${
+                              currentPhotoIdx === pIdx && !isVideoActive
+                                ? "border-[var(--primary)] ring-2 ring-[var(--primary)]/30 scale-105"
+                                : "border-[var(--border)] opacity-70 hover:opacity-100"
+                            }`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={photo}
+                              alt=""
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src =
+                                  story.id.includes("scholarship")
+                                    ? "/impact_debris.png"
+                                    : "/impact_texas.png";
+                              }}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
                     )}
+                  </div>
+
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      {story.featured && (
+                        <span className="service-badge py-1 px-3 text-[0.68rem] bg-[rgba(225,77,24,0.08)] text-[var(--primary)] border border-[rgba(225,77,24,0.2)] rounded-full font-bold uppercase tracking-wider">
+                          Inferno Cares Initiative
+                        </span>
+                      )}
+                      <span className="text-[0.68rem] font-bold uppercase tracking-wider py-1 px-3 rounded-full bg-[var(--panel-dark)] border border-[var(--border)] text-[var(--text-muted)]">
+                        {story.id.includes("scholarship")
+                          ? "Higher Education & Academic Opportunity"
+                          : "Disaster Relief & Community Resilience"}
+                      </span>
+                    </div>
                     <h3 className="font-[family-name:var(--font-space-grotesk)] text-[1.6rem] font-[750] mb-3 text-[var(--text-bright)]">
                       {story.title}
                     </h3>

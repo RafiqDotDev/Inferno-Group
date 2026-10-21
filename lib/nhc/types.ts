@@ -1,3 +1,7 @@
+export const TRACKER_UPDATE_INTERVAL_HOURS = 6;
+export const TRACKER_UPDATE_INTERVAL_SECONDS = TRACKER_UPDATE_INTERVAL_HOURS * 60 * 60; // 21,600 seconds (6 hours)
+export const TRACKER_UPDATE_INTERVAL_MS = TRACKER_UPDATE_INTERVAL_SECONDS * 1000; // 21,600,000 ms (6 hours)
+
 export type BasinType = "AL" | "EP" | "CP" | "SL" | "WP" | "IO" | "OTHER";
 export type StormCategoryType = "TD" | "TS" | "Cat1" | "Cat2" | "Cat3" | "Cat4" | "Cat5" | "Unknown";
 
@@ -137,5 +141,6 @@ export interface OverviewMetrics {
   depressionsCount: number;
   disturbancesCount: number;
   lastUpdated: string;
+  nextUpdateAt?: string;
 }
 

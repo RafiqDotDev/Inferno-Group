@@ -67,10 +67,17 @@ export const faqData: PageFAQItem[] = [
     category: "partnership",
   },
 
+  // ── STRATEGIC PLANNING & SMALL BUSINESS ADVISORY ──
+  {
+    question: "Does The Inferno Group provide strategic planning and consulting for independent and small businesses?",
+    answer: "Yes. While emergency management and public sector response is our operational core, TIG provides dedicated strategic advisory for independent and small businesses. We assist business owners with revenue growth roadmaps, operational workflow streamlining, business continuity and crisis risk mitigation, as well as SBA teaming and procurement capture strategy to help emerging businesses scale and win lucrative contracts.",
+    category: "services",
+  },
+
   // ── COMMUNITY IMPACT & INFERNO CARES ──
   {
     question: "What is Inferno Cares and how does TIG give back to impacted communities?",
-    answer: "Inferno Cares is TIG's corporate social responsibility and community impact initiative. We sponsor youth sports disaster relief events such as 'Kicking for Relief', fund academic opportunities through the 'Inferno Flame Scholarship', support veteran transition programs, and deliver emergency preparedness kits to historically underserved communities.",
+    answer: "Inferno Cares is TIG's corporate social responsibility and community impact initiative. We sponsor youth sports disaster relief events such as 'Kicking for Relief', fund academic opportunities through the 'Inferno Ignite Scholarship', support veteran transition programs, and deliver emergency preparedness kits to historically underserved communities.",
     category: "community",
   },
 ];

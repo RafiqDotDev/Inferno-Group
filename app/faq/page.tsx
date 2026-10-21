@@ -36,7 +36,8 @@ export default function FAQPage() {
   ];
 
   const filteredFAQ = faqData.filter((item) => {
-    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "all" || item.category === selectedCategory;
     const matchesSearch =
       item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.answer.toLowerCase().includes(searchQuery.toLowerCase());
@@ -47,15 +48,18 @@ export default function FAQPage() {
     <div className="page-view block">
       <section id="faq">
         <RevealOnMount className={`reveal ${isMounted ? "active" : ""}`}>
-          <div className="section-eyebrow">Knowledge Base &amp; FAQ</div>
           <h2 className="section-title">Frequently Asked Questions</h2>
           <p className="section-desc max-w-[800px] mx-auto mb-8">
-            Answers regarding The Inferno Group LLC&apos;s federal credentials (UEI / CAGE), HUBZone &amp; VOSB status, emergency response capabilities, bonding capacity, and teaming criteria.
+            Answers regarding The Inferno Group LLC&apos;s federal credentials
+            (UEI / CAGE), HUBZone &amp; VOSB status, emergency response
+            capabilities, bonding capacity, and teaming criteria.
           </p>
         </RevealOnMount>
 
         {/* Search & Categories controls */}
-        <RevealOnMount className={`faq-controls reveal flex flex-col gap-6 mb-12 max-w-[760px] mx-auto ${isMounted ? "active" : ""}`}>
+        <RevealOnMount
+          className={`faq-controls reveal flex flex-col gap-6 mb-12 max-w-[760px] mx-auto ${isMounted ? "active" : ""}`}
+        >
           <div className="form-group m-0">
             <input
               type="text"
@@ -91,13 +95,18 @@ export default function FAQPage() {
         </RevealOnMount>
 
         {/* FAQ Accordion Items */}
-        <div className={`faq-container reveal max-w-[900px] mx-auto ${isMounted ? "active" : ""}`}>
+        <div
+          className={`faq-container reveal max-w-[900px] mx-auto ${isMounted ? "active" : ""}`}
+        >
           {filteredFAQ.length > 0 ? (
             filteredFAQ.map((item, index) => {
               const isOpen = openIndex === index;
 
               return (
-                <div key={index} className={`faq-item ${isOpen ? "active" : ""} mb-3 rounded-2xl overflow-hidden border border-[var(--border)] bg-[var(--panel-dark)] transition-colors hover:border-[var(--primary)]`}>
+                <div
+                  key={index}
+                  className={`faq-item ${isOpen ? "active" : ""} mb-3 rounded-2xl overflow-hidden border border-[var(--border)] bg-[var(--panel-dark)] transition-colors hover:border-[var(--primary)]`}
+                >
                   <button
                     className="faq-trigger w-full p-6 text-left flex justify-between items-center gap-4 bg-transparent cursor-pointer"
                     onClick={() => toggleAccordion(index)}
@@ -127,25 +136,35 @@ export default function FAQPage() {
             })
           ) : (
             <div className="text-center p-12 text-[var(--text-muted)] bg-[var(--panel-dark)] border border-[var(--border)] rounded-2xl">
-              No FAQs matched your query parameters. Try a different keyword or category.
+              No FAQs matched your query parameters. Try a different keyword or
+              category.
             </div>
           )}
         </div>
 
         {/* Still Have Questions CTA */}
-        <RevealOnMount className={`mt-16 text-center reveal ${isMounted ? "active" : ""}`}>
+        <RevealOnMount
+          className={`mt-16 text-center reveal ${isMounted ? "active" : ""}`}
+        >
           <div className="bg-[var(--glass)] border border-[var(--border)] rounded-[24px] p-8 max-w-[700px] mx-auto flex flex-col items-center">
             <h3 className="font-[family-name:var(--font-space-grotesk)] text-[1.3rem] font-bold text-[var(--text-bright)] mb-2">
               Have Specific Teaming or Procurement Questions?
             </h3>
             <p className="text-xs text-[var(--text-muted)] max-w-[500px] mb-6">
-              Our contracts and alliances team is ready to provide tailored answers, compliance briefings, and capability presentations.
+              Our contracts and alliances team is ready to provide tailored
+              answers, compliance briefings, and capability presentations.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
-              <Link href="/contact" className="btn btn-primary py-2.5 px-6 text-xs no-underline">
+              <Link
+                href="/contact"
+                className="btn btn-primary py-2.5 px-6 text-xs no-underline"
+              >
                 Contact Contracts Office
               </Link>
-              <Link href="/capabilities" className="btn btn-secondary py-2.5 px-6 text-xs no-underline">
+              <Link
+                href="/capabilities"
+                className="btn btn-secondary py-2.5 px-6 text-xs no-underline"
+              >
                 View Capabilities &amp; NAICS
               </Link>
             </div>
@@ -155,4 +174,3 @@ export default function FAQPage() {
     </div>
   );
 }
-

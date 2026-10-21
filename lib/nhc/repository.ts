@@ -1,5 +1,5 @@
 import { fetchRawStorms, normalizeStorm } from "./apiService";
-import { DetailedStorm, OverviewMetrics } from "./types";
+import { DetailedStorm, OverviewMetrics, TRACKER_UPDATE_INTERVAL_MS } from "./types";
 
 interface CacheState {
   storms: DetailedStorm[];
@@ -11,21 +11,37 @@ const cache: CacheState = {
   lastFetchedAt: null,
 };
 
-export async function getActiveStorms(): Promise<{ storms: DetailedStorm[]; metrics: OverviewMetrics; fetchedAt: string }> {
+export async function getActiveStorms(forceRefresh = false): Promise<{
+  storms: DetailedStorm[];
+  metrics: OverviewMetrics;
+  fetchedAt: string;
+  nextUpdateAt: string;
+}> {
   const now = Date.now();
-  const isStale = !cache.lastFetchedAt || now - new Date(cache.lastFetchedAt).getTime() > 45000;
+  const isStale =
+    forceRefresh ||
+    !cache.lastFetchedAt ||
+    now - new Date(cache.lastFetchedAt).getTime() >= TRACKER_UPDATE_INTERVAL_MS;
 
   if (isStale) {
-    const rawData = await fetchRawStorms();
-    const rawList = Array.isArray(rawData?.activeStorms) ? rawData.activeStorms : [];
-
-    if (rawList.length > 0) {
-      cache.storms = await Promise.all(rawList.map(normalizeStorm));
-    } else {
-      cache.storms = [];
+    const rawData = await fetchRawStorms(forceRefresh);
+    if (rawData !== null) {
+      const rawList = Array.isArray(rawData?.activeStorms) ? rawData.activeStorms : [];
+      if (rawList.length > 0) {
+        cache.storms = await Promise.all(rawList.map(normalizeStorm));
+      } else {
+        cache.storms = [];
+      }
+      cache.lastFetchedAt = new Date().toISOString();
+    } else if (!cache.lastFetchedAt) {
+      cache.lastFetchedAt = new Date().toISOString();
     }
-    cache.lastFetchedAt = new Date().toISOString();
   }
+
+  const fetchedAt = cache.lastFetchedAt || new Date().toISOString();
+  const nextUpdateAt = new Date(
+    new Date(fetchedAt).getTime() + TRACKER_UPDATE_INTERVAL_MS
+  ).toISOString();
 
   const storms = cache.storms;
   const metrics: OverviewMetrics = {
@@ -34,13 +50,15 @@ export async function getActiveStorms(): Promise<{ storms: DetailedStorm[]; metr
     tropicalStormsCount: storms.filter((s) => s.category === "TS").length,
     depressionsCount: storms.filter((s) => s.category === "TD").length,
     disturbancesCount: 0,
-    lastUpdated: cache.lastFetchedAt || new Date().toISOString(),
+    lastUpdated: fetchedAt,
+    nextUpdateAt,
   };
 
   return {
     storms,
     metrics,
-    fetchedAt: cache.lastFetchedAt || new Date().toISOString(),
+    fetchedAt,
+    nextUpdateAt,
   };
 }
 

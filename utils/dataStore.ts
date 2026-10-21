@@ -75,6 +75,8 @@ export interface CommunityStory {
   summary: string;
   content: string;
   image: string; // Base64 or standard asset URL
+  videoUrl?: string; // Optional video asset or embed URL
+  gallery?: string[]; // Optional supporting photo array
   featured: boolean;
   status: "draft" | "published";
 }
@@ -361,27 +363,27 @@ const defaultServices: ServiceItem[] = [
   {
     id: "strategic-consulting-and-operational-excellence",
     num: "05",
-    badge: "Turning Complex Challenges into Sustainable Solutions",
-    title: "Strategic Consulting, Capture & Compliance",
-    headline: "Strengthening Operations, Opportunity Capture & Legal Strategy",
-    desc: "We partner with leadership to optimize organizational performance, develop winning proposal and capture strategies, navigate regulatory requirements, and implement solutions that produce measurable results.",
+    badge: "Empowering Small Businesses & Expanding Commercial Revenue",
+    title: "Strategic Planning & Small Business Advisory",
+    headline: "Comprehensive Strategy, Operational Scaling & Revenue Diversification",
+    desc: "While emergency management is our operational foundation, The Inferno Group LLC actively partners with independent and small businesses to engineer scalable growth, optimize operational workflows, navigate regulatory landscapes, and capture lucrative public and commercial contracts.",
     caps: [
-      "Strategic Planning & Organizational Performance Assessments",
-      "Business Process Optimization & Operational Workflow Improvement",
-      "Government Contracting Strategy, Opportunity Development & Capture",
-      "Proposal Strategy, Partner Teaming & Joint Pursuit Structuring",
-      "Legal Strategy, Contract Review & Corporate Governance Advisory",
-      "Regulatory Compliance, Risk Management & Debarment Screenings",
-      "Supplier Diversity & Socioeconomic Teaming (HUBZone & VOSB)",
-      "Policy, SOP & Governance Framework Formulation",
-      "Executive Advisory & Change Management"
+      "Strategic Planning & Revenue Scaling Roadmaps for Small Businesses",
+      "Operational Workflow Optimization & Business Process Engineering",
+      "Commercial Growth Advisory & Market Diversification Strategy",
+      "Socioeconomic Teaming, Joint Pursuits & Prime Proposal Capture (HUBZone & VOSB)",
+      "Commercial Business Continuity, Resiliency & Risk Mitigation",
+      "Financial Systems Readiness, Cost Tracking & Indirect Rate Guidance",
+      "Contract Review, Subcontracting Teaming & Corporate Governance Advisory",
+      "SOP & Policy Development for Scaling Independent Enterprises",
+      "Executive Advisory, Fractional Leadership & Change Management"
     ],
     idealFor: [
-      "Executive Leadership Teams",
-      "Government Contractors & Teaming Partners",
-      "Growing Commercial Enterprises",
-      "Healthcare & Regulated Industry Organizations",
-      "Public-Sector Advisory Boards"
+      "Independent & Small Business Owners",
+      "Growing Commercial Enterprises & Startups",
+      "Socioeconomic & Diversity-Certified Subcontractors",
+      "Government Contractors Seeking Teaming Alignments",
+      "Executive Leadership Teams Diversifying Revenue Pipelines"
     ],
     status: "published"
   },
@@ -483,18 +485,21 @@ const defaultCommunityStories: CommunityStory[] = [
   {
     id: "kicking-for-relief",
     title: "Kicking for Relief Kickball Tournament",
-    summary: "Disaster relief initiative raising funds for individuals and families impacted by devastating Asheville, NC flooding.",
-    content: "In response to the flooding that impacted Asheville, North Carolina, TIG hosted the Kicking for Relief Kickball Tournament to raise funds for individuals and families affected by the disaster. The event brought people together through friendly competition and giving, turning a local event into an opportunity to support recovery beyond TIG's immediate community. TIG views disaster response as more than a professional service — behind every emergency are families and neighborhoods working to rebuild, and this event reflected TIG's commitment to standing with those communities.",
-    image: "/impact_texas.png",
+    summary: "Annual disaster relief initiative bringing together community teams to raise funds for impacted families.",
+    content: "In response to disaster-affected families, TIG hosts the 'Kicking for Relief' Kickball Tournament to unite corporate partners, community volunteers, and emergency professionals. Through high-energy team competition, the event channels 100% of community proceeds directly into immediate relief funds for storm-displaced households. TIG views disaster recovery as a human mission — standing with communities before, during, and long after the emergency ends.",
+    image: "/kickball_tournament.png",
+    gallery: ["/kickball_tournament.png", "/impact_texas.png"],
     featured: true,
     status: "published"
   },
   {
-    id: "inferno-flame-scholarship",
-    title: "The Inferno Flame Scholarship",
-    summary: "Awarding $500 book scholarships to Orlando-area high school seniors preparing for four-year universities.",
-    content: "TIG launched the Inferno Flame Scholarship to support the next generation of leaders beginning their college journeys. The program awarded $500 book scholarships to Orlando-area high school seniors preparing to attend four-year universities, helping offset costs like textbooks and academic materials as they begin their next chapter.",
-    image: "/impact_debris.png",
+    id: "inferno-ignite-scholarship",
+    title: "The Inferno Ignite Scholarship",
+    summary: "Awarding academic stipends and book scholarships to graduating high school seniors entering college.",
+    content: "TIG launched the Inferno Ignite Scholarship to fuel the aspirations of the next generation of leaders. The program awards annual book stipends and academic micro-grants to Greater Orlando high school seniors preparing to attend four-year universities or technical institutions, helping remove cost barriers for textbooks, coursework technology, and critical learning materials.",
+    image: "/scholarship_ceremony.png",
+    videoUrl: "/scholarship_video.mp4",
+    gallery: ["/scholarship_ceremony.png", "/scholarship_recipients.png", "/impact_debris.png"],
     featured: true,
     status: "published"
   }
@@ -556,7 +561,7 @@ const defaultArticles: Article[] = [
     title: "Inferno Cares: Driving Social Impact, Relief & Education Across Our Communities",
     category: "Community Impact",
     summary: "How TIG's corporate social responsibility initiatives sponsor disaster relief tournaments, youth scholarships, and veteran support.",
-    content: "At The Inferno Group LLC, our mission to protect and restore communities extends beyond commercial and federal contracts. Through Inferno Cares, TIG actively invests in community resilience, relief, and youth empowerment.\n\nSignature initiatives include the 'Kicking for Relief' kickball tournament raising direct aid for storm-displaced families, the 'Inferno Flame Scholarship' awarding college book stipends to Greater Orlando high school seniors, and direct workforce development programs supporting veteran reintegration into emergency management careers.",
+    content: "At The Inferno Group LLC, our mission to protect and restore communities extends beyond commercial and federal contracts. Through Inferno Cares, TIG actively invests in community resilience, relief, and youth empowerment.\n\nSignature initiatives include the 'Kicking for Relief' kickball tournament raising direct aid for storm-displaced families, the 'Inferno Ignite Scholarship' awarding college book stipends to Greater Orlando high school seniors, and direct workforce development programs supporting veteran reintegration into emergency management careers.",
     publishedDate: "2026-08-18",
     author: "Inferno Cares Community Desk",
     status: "published"
@@ -1244,8 +1249,8 @@ export const dataStore = {
   saveTeam: (team: TeamMember[]): void => setStoreItem<TeamMember[]>("inferno_team_v6", team),
 
   // Services
-  getServices: (): ServiceItem[] => getStoreItem<ServiceItem[]>("inferno_services_v3", defaultServices),
-  saveServices: (services: ServiceItem[]): void => setStoreItem<ServiceItem[]>("inferno_services_v3", services),
+  getServices: (): ServiceItem[] => getStoreItem<ServiceItem[]>("inferno_services_v4", defaultServices),
+  saveServices: (services: ServiceItem[]): void => setStoreItem<ServiceItem[]>("inferno_services_v4", services),
 
   // Stats
   getStats: (): StatItem[] => getStoreItem<StatItem[]>("inferno_stats_v3", defaultStats),
@@ -1256,8 +1261,8 @@ export const dataStore = {
   saveTestimonials: (testimonials: TestimonialItem[]): void => setStoreItem<TestimonialItem[]>("inferno_testimonials_v4", testimonials),
 
   // Community stories
-  getCommunityStories: (): CommunityStory[] => getStoreItem<CommunityStory[]>("inferno_community_v4", defaultCommunityStories),
-  saveCommunityStories: (stories: CommunityStory[]): void => setStoreItem<CommunityStory[]>("inferno_community_v4", stories),
+  getCommunityStories: (): CommunityStory[] => getStoreItem<CommunityStory[]>("inferno_community_v5", defaultCommunityStories),
+  saveCommunityStories: (stories: CommunityStory[]): void => setStoreItem<CommunityStory[]>("inferno_community_v5", stories),
 
   // News
   getArticles: (): Article[] => getStoreItem<Article[]>("inferno_articles_v4", defaultArticles),

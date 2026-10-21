@@ -26,13 +26,12 @@ export default function Navbar() {
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
+    const previousOverflowY = document.body.style.overflowY;
     if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflowY = "hidden";
     }
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflowY = previousOverflowY;
     };
   }, [isOpen]);
 
@@ -98,6 +97,14 @@ export default function Navbar() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.png" alt="The Inferno Group Logo" />
+        <span className="flex flex-col">
+          <span className="text-[1.05rem] sm:text-[1.2rem] font-bold tracking-tight text-[var(--text-bright)] leading-tight">
+            THE INFERNO GROUP
+          </span>
+          <span className="text-[0.62rem] uppercase tracking-wider text-[var(--text-muted)] font-mono font-medium hidden sm:inline">
+            Government &amp; Commercial Consulting
+          </span>
+        </span>
       </Link>
 
       <button

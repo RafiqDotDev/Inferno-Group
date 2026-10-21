@@ -8,8 +8,12 @@ export const knowledgeBase: { keywords: string[]; answer: string }[] = [
     answer: "The Inferno Group LLC is HUBZone Certified by the U.S. Small Business Administration (SBA) and a Veteran-Owned Small Business (VOSB). We support federal socioeconomic contracting objectives, set-aside procurements, and public/private supplier diversity mandates.",
   },
   {
-    keywords: ["inferno cares", "community", "scholarship", "kicking for relief"],
-    answer: "Inferno Cares is TIG's community engagement arm focusing on disaster relief (Kicking for Relief kickball tournament), education ($500 Inferno Flame Academic Scholarships), youth development, and community partnerships. Contact us at InfernoCares@theinfernogroup.com.",
+    keywords: ["inferno cares", "community", "scholarship", "kicking for relief", "ignite"],
+    answer: "Inferno Cares is TIG's community engagement arm focusing on disaster relief (Kicking for Relief kickball tournament), education ($500 Inferno Ignite Academic Scholarships), youth development, and community partnerships. Contact us at InfernoCares@theinfernogroup.com.",
+  },
+  {
+    keywords: ["small business", "strategic planning", "revenue", "independent", "commercial", "growth", "consulting"],
+    answer: "Beyond emergency management, The Inferno Group provides Strategic Planning and Growth Advisory for independent and small businesses. We help enterprises optimize operational workflows, diversify revenue streams, build commercial business continuity plans, and structure winning SBA subcontracting and proposal teaming strategies. Learn more on our [Services Page](/services) or [Schedule a Consultation](/calendar).",
   },
   {
     keywords: ["fema", "disaster", "emergency", "recovery", "assistance", "debris"],
@@ -37,6 +41,7 @@ export const knowledgeBase: { keywords: string[]; answer: string }[] = [
 export const mockKnowledgeBase = knowledgeBase;
 
 export const PRESETS = [
+  "Small Business Strategic Planning?",
   "SBA HUBZone & VOSB Qualifications?",
   "FEMA Disaster Coordination?",
   "Teaming & Bonding Capacity?",

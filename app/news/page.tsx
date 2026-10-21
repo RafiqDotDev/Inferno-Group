@@ -194,7 +194,7 @@ export default function NewsPage() {
                     </div>
                   </div>
                   <p className="text-[var(--text-muted)] leading-[1.5] mb-2">
-                    Proud to sponsor the &lsquo;Kicking for Relief&rsquo; charity kickball tournament supporting disaster-affected families and launching our 2026 Inferno Flame Academic Scholarships!
+                    Proud to sponsor the &lsquo;Kicking for Relief&rsquo; charity kickball tournament supporting disaster-affected families and launching our 2026 Inferno Ignite Academic Scholarships!
                   </p>
                   <div className="text-[var(--primary)] font-semibold text-[0.7rem]">
                     #InfernoCares #CommunityImpact #Orlando #YouthRelief

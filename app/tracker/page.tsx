@@ -1,12 +1,14 @@
 "use client";
 
-import React, { type CSSProperties, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import StormOverviewCards from "@/components/StormOverviewCards";
 import {
   DetailedStorm,
   OverviewMetrics,
   DisturbanceArea,
+  TRACKER_UPDATE_INTERVAL_HOURS,
+  TRACKER_UPDATE_INTERVAL_MS,
 } from "@/lib/nhc/types";
 
 const TrackerMap = dynamic(() => import("@/components/TrackerMap"), {
@@ -41,6 +43,10 @@ export default function TrackerPage() {
   } | null>(null);
   const [outlookLoading, setOutlookLoading] = useState(false);
   const [outlookError, setOutlookError] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [nextSyncAt, setNextSyncAt] = useState<string | null>(null);
+  const [syncCycleTick, setSyncCycleTick] = useState(0);
+  const [forceRefreshNext, setForceRefreshNext] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -49,19 +55,61 @@ export default function TrackerPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Automatic 6-hour refresh scheduler + background tab wakeup check
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setSyncCycleTick((tick) => tick + 1);
+    }, TRACKER_UPDATE_INTERVAL_MS);
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible" && lastSyncedAt) {
+        const elapsed = Date.now() - new Date(lastSyncedAt).getTime();
+        if (elapsed >= TRACKER_UPDATE_INTERVAL_MS) {
+          setSyncCycleTick((tick) => tick + 1);
+        }
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [lastSyncedAt]);
+
+  const handleManualSync = useCallback(() => {
+    setForceRefreshNext(true);
+    setSyncCycleTick((tick) => tick + 1);
+  }, []);
+
   useEffect(() => {
     let isCancelled = false;
 
     async function loadStorms() {
       try {
         setLoading(true);
-        const res = await fetch("/api/tracker/storms", { cache: "no-store" });
+        const query = forceRefreshNext ? "?refresh=true" : "";
+        const res = await fetch(`/api/tracker/storms${query}`, {
+          cache: "no-store",
+        });
         if (!res.ok) throw new Error("Unable to fetch NOAA storm feed.");
         const payload = await res.json();
 
         if (!isCancelled) {
           setDetailedStorms(payload.storms || []);
           setMetrics(payload.metrics || null);
+          const fetchedTime =
+            payload.fetchedAt ||
+            payload.metrics?.lastUpdated ||
+            new Date().toISOString();
+          const nextTime =
+            payload.nextUpdateAt ||
+            payload.metrics?.nextUpdateAt ||
+            new Date(
+              new Date(fetchedTime).getTime() + TRACKER_UPDATE_INTERVAL_MS,
+            ).toISOString();
+          setLastSyncedAt(fetchedTime);
+          setNextSyncAt(nextTime);
           setActiveStormId(
             (current) => current || payload.storms?.[0]?.id || "",
           );
@@ -76,19 +124,18 @@ export default function TrackerPage() {
       } finally {
         if (!isCancelled) {
           setLoading(false);
+          if (forceRefreshNext) setForceRefreshNext(false);
         }
       }
     }
 
     loadStorms();
-    const interval = window.setInterval(loadStorms, 45000);
     return () => {
       isCancelled = true;
-      window.clearInterval(interval);
     };
-  }, []);
+  }, [syncCycleTick, forceRefreshNext]);
 
-  // Fetch Graphical Outlook Discussion text
+  // Fetch Graphical Outlook Discussion text (auto-updates on 6h cycle + basin change)
   useEffect(() => {
     if (activeTab !== "map") return;
 
@@ -97,9 +144,13 @@ export default function TrackerPage() {
       try {
         setOutlookLoading(true);
         setOutlookError(null);
-        const res = await fetch(`/api/tracker/outlook?basin=${selectedBasin}`, {
-          cache: "no-store",
-        });
+        const refreshParam = forceRefreshNext ? "&refresh=true" : "";
+        const res = await fetch(
+          `/api/tracker/outlook?basin=${selectedBasin}${refreshParam}`,
+          {
+            cache: "no-store",
+          },
+        );
         if (!res.ok) throw new Error("Unable to load outlook discussion.");
         const data = await res.json();
         if (!isCancelled) setOutlookData(data);
@@ -117,15 +168,16 @@ export default function TrackerPage() {
     return () => {
       isCancelled = true;
     };
-  }, [activeTab, selectedBasin]);
+  }, [activeTab, selectedBasin, syncCycleTick, forceRefreshNext]);
 
-  // Fetch Tropical Weather Outlook Disturbances
+  // Fetch Tropical Weather Outlook Disturbances (auto-updates on 6h cycle + filter change)
   useEffect(() => {
     let isCancelled = false;
     async function loadDisturbances() {
       try {
+        const refreshParam = forceRefreshNext ? "&refresh=true" : "";
         const res = await fetch(
-          `/api/tracker/disturbances?basin=${selectedBasin}&days=${selectedDays}`,
+          `/api/tracker/disturbances?basin=${selectedBasin}&days=${selectedDays}${refreshParam}`,
           { cache: "no-store" },
         );
         if (!res.ok) return;
@@ -142,7 +194,7 @@ export default function TrackerPage() {
     return () => {
       isCancelled = true;
     };
-  }, [selectedBasin, selectedDays]);
+  }, [selectedBasin, selectedDays, syncCycleTick, forceRefreshNext]);
 
   const activeStorm = useMemo(() => {
     return (
@@ -189,6 +241,54 @@ export default function TrackerPage() {
             National Hurricane Center APIs, providing forecast cones, wind
             radii, satellite imagery, warnings, and analytical charts.
           </p>
+
+          {/* 6-Hour Auto-Update Sync Status Bar */}
+          <div className="mt-4 mb-6 inline-flex flex-wrap items-center gap-3 sm:gap-5 px-4 py-2.5 rounded-xl bg-[var(--glass)] border border-[var(--border)] text-xs text-[var(--text-muted)]">
+            <span className="inline-flex items-center gap-2 font-bold text-[var(--text-bright)]">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  loading
+                    ? "bg-amber-400 animate-pulse"
+                    : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]"
+                }`}
+              />
+              Auto-Sync Every {TRACKER_UPDATE_INTERVAL_HOURS} Hours
+            </span>
+            {lastSyncedAt && (
+              <span>
+                Last Updated:{" "}
+                <strong className="text-[var(--text-bright)]">
+                  {new Date(lastSyncedAt).toLocaleString([], {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </strong>
+              </span>
+            )}
+            {nextSyncAt && (
+              <span>
+                Next Auto-Update:{" "}
+                <strong className="text-[var(--primary)]">
+                  {new Date(nextSyncAt).toLocaleString([], {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </strong>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleManualSync}
+              disabled={loading}
+              className="px-2.5 py-1 rounded-md bg-[var(--panel-dark)] hover:bg-[var(--primary)] hover:text-white border border-[var(--border)] font-bold text-[0.7rem] text-[var(--text-bright)] transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {loading ? "Syncing…" : "Sync Now"}
+            </button>
+          </div>
         </div>
 
         {/* Top Metric Cards */}

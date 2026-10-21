@@ -1,19 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getActiveStorms } from "@/lib/nhc/repository";
+import { TRACKER_UPDATE_INTERVAL_HOURS, TRACKER_UPDATE_INTERVAL_SECONDS } from "@/lib/nhc/types";
 import { logSecurityEvent } from "@/lib/security/logger";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const { storms, metrics, fetchedAt } = await getActiveStorms();
+    const forceRefresh = req.nextUrl.searchParams.get("refresh") === "true";
+    const { storms, metrics, fetchedAt, nextUpdateAt } = await getActiveStorms(forceRefresh);
     return NextResponse.json(
       {
         fetchedAt,
+        nextUpdateAt,
+        updateIntervalHours: TRACKER_UPDATE_INTERVAL_HOURS,
         metrics,
         storms,
       },
       {
         headers: {
-          "Cache-Control": "no-store",
+          "Cache-Control": forceRefresh
+            ? "no-store"
+            : `public, s-maxage=${TRACKER_UPDATE_INTERVAL_SECONDS}, stale-while-revalidate=3600`,
           "Access-Control-Allow-Origin": "*",
         },
       }
