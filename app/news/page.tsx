@@ -41,7 +41,7 @@ export default function NewsPage() {
           <div className="section-eyebrow">Firm Intel &amp; Bulletins</div>
           <h2 className="section-title">News, Insights &amp; Operational Bulletins</h2>
           <p className="section-desc max-w-[850px] mx-auto">
-            Stay informed with official briefings on FEMA Public Assistance documentation, SBA HUBZone / VOSB procurement advantages, DCAA cost accounting compliance, and Inferno Cares community impact initiatives.
+            Briefings on FEMA Public Assistance, SBA HUBZone &amp; VOSB contracting, DCAA compliance, and Inferno Cares community initiatives.
           </p>
         </RevealOnMount>
 

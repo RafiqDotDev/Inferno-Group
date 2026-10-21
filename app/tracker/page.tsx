@@ -237,9 +237,8 @@ export default function TrackerPage() {
             Hurricane Tracker &amp; Intelligence Dashboard
           </h2>
           <p className="section-desc">
-            Comprehensive surveillance dashboard direct-synced with NOAA
-            National Hurricane Center APIs, providing forecast cones, wind
-            radii, satellite imagery, warnings, and analytical charts.
+            Live NOAA National Hurricane Center tracking—featuring forecast
+            cones, tropical disturbances, wind radii, and coastal advisories.
           </p>
 
           {/* 6-Hour Auto-Update Sync Status Bar */}

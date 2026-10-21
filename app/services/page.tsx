@@ -155,7 +155,7 @@ export default function ServicesPage() {
           <div className="section-eyebrow">Services Directory</div>
           <h2 className="section-title">Government &amp; Commercial Solutions</h2>
           <p className="section-desc">
-            We handle public policy execution, strict procurement parameters, and large-scale emergency program compliance, while delivering dedicated strategic planning and revenue growth advisory for independent and small businesses.
+            Full-lifecycle emergency management and federal grant compliance, paired with strategic growth and revenue advisory for independent and small businesses.
           </p>
 
           {/* Solutions Category Filter Bar */}

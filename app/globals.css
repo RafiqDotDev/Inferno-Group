@@ -2055,8 +2055,12 @@
   }
 
   @media (max-width: 1024px) {
+    nav > .desktop-only-cta {
+      display: none !important;
+    }
+
     .nav-dropdown,
-    .nav-cta-dropdown {
+    .nav-links .nav-cta-dropdown {
       width: 100%;
       text-align: center;
       display: flex !important;

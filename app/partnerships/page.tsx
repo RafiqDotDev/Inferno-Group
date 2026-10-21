@@ -86,12 +86,10 @@ export default function PartnershipsPage() {
           <div className="section-eyebrow">Partners &amp; Subcontractors</div>
           <h2 className="section-title">Built to Partner. Ready to Perform.</h2>
           <p className="section-desc max-w-[850px] mx-auto mb-8 leading-[1.8]">
-            The Inferno Group LLC believes strong partnerships create stronger
-            outcomes. We actively seek relationships with qualified
-            subcontractors, specialty contractors, consultants, suppliers,
-            distributors, professional service firms, and emerging businesses
-            that can help us deliver responsive, compliant, and cost-effective
-            solutions to government and commercial clients.
+            We partner with qualified subcontractors, specialty trades,
+            consultants, suppliers, and emerging businesses to deliver
+            responsive, compliant solutions for government and commercial
+            clients.
           </p>
           <div className="flex flex-wrap justify-center gap-4 mb-12">
             <button
@@ -151,11 +149,9 @@ export default function PartnershipsPage() {
               Reliable Teaming Without Unnecessary Barriers
             </h3>
             <p className="text-[var(--text-muted)] text-[0.95rem] leading-[1.8]">
-              We welcome established firms as well as capable small and emerging
-              businesses. Our goal is not to create unnecessary barriers to
-              partnership, but to build a reliable network of organizations that
-              share our commitment to quality, integrity, responsiveness, and
-              successful project execution.
+              We welcome established primes and capable emerging businesses
+              alike—removing unnecessary barriers to build a trusted network
+              committed to quality, integrity, and execution.
             </p>
           </div>
 

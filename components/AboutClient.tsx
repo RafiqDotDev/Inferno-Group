@@ -270,9 +270,9 @@ export default function AboutClient() {
               {/* Badges & Core Snapshot */}
               <div className="p-5 sm:p-7 flex flex-col gap-5">
                 <p className="text-[var(--text-muted)] text-[0.9rem] leading-[1.65]">
-                  Veteran-led, mission-focused government consulting and
-                  emergency management firm providing rapid mobilization,
-                  compliance rigor, and community-first support.
+                  Veteran-led government consulting and emergency management firm
+                  delivering rapid mobilization, strict compliance, and measurable
+                  results.
                 </p>
 
                 {/* Federal Identifier Quick Chips */}
@@ -394,9 +394,8 @@ export default function AboutClient() {
                     U.S. Small Business Administration
                   </span>
                   <p className="text-[var(--text-muted)] text-[0.88rem] mt-2 leading-[1.6]">
-                    Supporting federal socioeconomic contracting objectives and
-                    economic development in historically underutilized business
-                    zones.
+                    Delivering federal socioeconomic contracting value and
+                    economic growth in historically underutilized zones.
                   </p>
                 </div>
               </div>
@@ -427,9 +426,8 @@ export default function AboutClient() {
                     Veteran-Led • Mission-Focused
                   </span>
                   <p className="text-[var(--text-muted)] text-[0.88rem] mt-2 leading-[1.6]">
-                    Positioned to support public-sector and private-sector
-                    supplier diversity mandates and socioeconomic teaming
-                    requirements.
+                    Supporting public and private supplier diversity mandates
+                    and socioeconomic teaming goals.
                   </p>
                 </div>
               </div>
@@ -672,13 +670,10 @@ export default function AboutClient() {
               Community Impact &amp; Inferno Cares
             </h2>
             <p className="section-desc max-w-[850px] mx-auto mt-4 leading-[1.7]">
-              At The Inferno Group LLC, service extends beyond the work we
-              perform for clients. We believe meaningful impact is measured not
-              only by the projects we complete, but by how we show up for
-              communities when support is needed most. Through{" "}
-              <strong>Inferno Cares</strong>, our community engagement efforts
-              focus on relief, education, opportunity, and service to
-              underserved communities.
+              Service extends beyond our contracts. Through{" "}
+              <strong>Inferno Cares</strong>, TIG invests directly in disaster
+              relief, youth education, and underserved communities when support
+              is needed most.
             </p>
           </div>
         </RevealOnMount>
@@ -821,11 +816,9 @@ export default function AboutClient() {
               Our Commitment to Community
             </h3>
             <p className="text-[var(--text-muted)] text-[0.95rem] leading-[1.7] mb-8">
-              TIG is committed to expanding its impact throughout the{" "}
-              <strong>Greater Orlando metropolitan area</strong>, particularly
-              in underserved communities where additional resources, advocacy,
-              mentorship, and community investment can make a meaningful
-              difference. We are actively interested in opportunities involving:
+              TIG expands its impact across the{" "}
+              <strong>Greater Orlando metropolitan area</strong> through
+              targeted resources, mentorship, and community partnerships:
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -837,7 +830,7 @@ export default function AboutClient() {
                 "Veteran and military-family support",
                 "Community beautification and neighborhood improvement",
                 "Volunteer service projects",
-                "Partnerships with schools, nonprofits, faith-based organizations, and community organizations",
+                "School, nonprofit, and community partnerships",
               ].map((item, idx) => (
                 <div
                   key={idx}
@@ -875,11 +868,9 @@ export default function AboutClient() {
                   Partner With Inferno Cares
                 </h4>
                 <p className="text-xs md:text-sm text-[var(--text-muted)] mt-1.5 max-w-[580px] leading-[1.65]">
-                  The Inferno Group welcomes serious community engagement
-                  opportunities throughout Greater Orlando and surrounding
-                  communities. We are especially interested in partnerships
-                  where TIG&apos;s people, resources, professional expertise, or
-                  community network can create measurable and lasting value.
+                  We welcome community partnerships across Greater Orlando where
+                  TIG&apos;s team, expertise, and resources can create lasting
+                  local impact.
                 </p>
                 <p className="text-xs font-semibold text-[var(--primary)] mt-3 italic">
                   &ldquo;Stronger communities create stronger futures. At TIG,
@@ -922,11 +913,9 @@ export default function AboutClient() {
                 Built to Partner. Ready to Perform.
               </h3>
               <p className="text-slate-300 text-[0.95rem] md:text-[1.05rem] leading-[1.7] mb-8">
-                The Inferno Group LLC actively seeks relationships with
-                qualified subcontractors, specialty contractors, consultants,
-                suppliers, and distributors. Whether you have substantial
-                bonding capacity or specialized trade capabilities, we build
-                reliable teaming arrangements that win and deliver together.
+                We partner with qualified subcontractors, specialty trades,
+                consultants, and suppliers—building reliable teaming arrangements
+                that win and deliver together.
               </p>
               <div className="flex flex-wrap items-center gap-4">
                 <Link

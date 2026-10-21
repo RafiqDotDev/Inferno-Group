@@ -331,7 +331,7 @@ export default function HomeClient() {
           </h1>
           <p className="hero-sub">
             {hero?.subheadline ||
-              "The Inferno Group LLC delivers end-to-end operational readiness and strategic consulting. From federal disaster recovery and Stafford Act compliance to strategic planning and revenue scaling for independent and small businesses."}
+              "Ideas don't solve problems—execution does. Practical consulting, disaster recovery, and small business growth solutions with measurable impact."}
           </p>
           <div className="hero-actions">
             <Link
@@ -395,7 +395,7 @@ export default function HomeClient() {
       {/* FEDERAL CREDENTIALS & SOCIOECONOMIC HIGHLIGHTS STRIP */}
       <section
         id="home-credentials"
-        className="py-16 px-[5vw] bg-[var(--glass)] border-t border-b border-[var(--border)]"
+        className="py-16 px-[5vw] bg-[var(--glass)] border-b border-[var(--border)]"
       >
         <RevealOnMount direction="up">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-8 bg-[var(--panel-dark)] border border-[var(--border)] rounded-[24px] p-8 lg:p-10 shadow-lg">
@@ -439,9 +439,8 @@ export default function HomeClient() {
                   U.S. Small Business Administration
                 </div>
                 <p className="text-xs text-[var(--text-muted)] leading-[1.5] mt-1">
-                  Supporting federal socioeconomic contracting objectives and
-                  economic development in historically underutilized
-                  communities.
+                  Delivering federal socioeconomic contracting value and
+                  economic growth in historically underutilized communities.
                 </p>
               </div>
 
@@ -464,8 +463,8 @@ export default function HomeClient() {
                   Veteran-Led &middot; Mission-Focused
                 </div>
                 <p className="text-xs text-[var(--text-muted)] leading-[1.5] mt-1">
-                  Positioned to support public-sector and private-sector
-                  supplier diversity objectives with disciplined execution.
+                  Supporting public and commercial supplier diversity goals
+                  with disciplined, veteran-led execution.
                 </p>
               </div>
             </div>
@@ -491,11 +490,9 @@ export default function HomeClient() {
               Dual-Pillar Operational Excellence
             </h2>
             <p className="section-desc mt-3">
-              The Inferno Group bridges the gap between high-stakes emergency
-              command and sustainable commercial growth. We stand as a proven
-              disaster recovery partner for government agencies and a strategic
-              advisory force helping independent and small businesses scale
-              revenue.
+              Bridging high-stakes emergency command and sustainable commercial
+              growth—delivering proven disaster recovery for public agencies and
+              revenue-scaling strategy for independent and small businesses.
             </p>
           </div>
         </RevealOnMount>
@@ -519,18 +516,17 @@ export default function HomeClient() {
                   Emergency Management &amp; Disaster Recovery
                 </h3>
                 <p className="text-[var(--text-muted)] text-[0.92rem] leading-[1.7] mb-6">
-                  Our operational bedrock: 24/7 disaster response coordination,
-                  FEMA Public &amp; Individual Assistance formulation, Category
-                  A debris monitoring, Stafford Act audit compliance, and rapid
-                  workforce deployments.
+                  24/7 disaster response, FEMA Public &amp; Individual Assistance,
+                  Category A debris monitoring, Stafford Act audit compliance, and
+                  rapid field cadre deployment.
                 </p>
 
                 <div className="space-y-2.5 mb-8">
                   {[
-                    "FEMA PA/IA Formulation & 2 CFR Part 200 Grant Compliance",
-                    "Emergency Operations Center (EOC) Command & Incident Staffing",
-                    "Category A Debris Monitoring, Verification & Disposal Logging",
-                    "Rapid Field Cadre Mobilization & Surge Response Teams",
+                    "FEMA PA/IA Grants & 2 CFR Part 200 Compliance",
+                    "EOC Command & Incident Management Staffing",
+                    "Category A Debris Monitoring & Load Verification",
+                    "Rapid Field Cadre Mobilization & Surge Response",
                   ].map((feat, idx) => (
                     <div
                       key={idx}
@@ -599,18 +595,17 @@ export default function HomeClient() {
                   Strategic Planning &amp; Small Business Advisory
                 </h3>
                 <p className="text-[var(--text-muted)] text-[0.92rem] leading-[1.7] mb-6">
-                  Engineered to generate new revenue and resilience: strategic
-                  growth roadmaps, operational workflow optimization, commercial
-                  business continuity, and SBA teaming to win lucrative public
-                  and private contracts.
+                  Built to expand commercial revenue: strategic growth roadmaps,
+                  workflow optimization, business continuity, and SBA teaming to
+                  capture public and private contracts.
                 </p>
 
                 <div className="space-y-2.5 mb-8">
                   {[
-                    "Strategic Growth & Revenue Scaling for Small Businesses",
-                    "Business Process Engineering & Workflow Streamlining",
-                    "SBA Teaming, Joint Pursuits & B2G Capture (HUBZone / VOSB)",
-                    "Commercial Business Continuity & Crisis Risk Mitigation",
+                    "Strategic Growth & Revenue Roadmaps for Small Businesses",
+                    "Process Engineering & Workflow Optimization",
+                    "SBA Teaming & B2G Capture (HUBZone / VOSB)",
+                    "Commercial Business Continuity & Risk Mitigation",
                   ].map((feat, idx) => (
                     <div
                       key={idx}
@@ -710,7 +705,7 @@ export default function HomeClient() {
               </div>
               <h2 className="section-title">The Inferno Command</h2>
               <p className="text-[var(--text-muted)] text-base leading-[1.7] mb-8">
-                {about.story.substring(0, 280)}...
+                {about.story.substring(0, 210)}...
               </p>
               <Link href="/about" className="btn btn-secondary no-underline">
                 Read Corporate Story
@@ -726,9 +721,9 @@ export default function HomeClient() {
                   FEMA &amp; FAR Alignment
                 </h4>
                 <p className="text-[0.85rem] text-[var(--text-muted)] leading-[1.5]">
-                  Every deployment truck record, cost log, and individual
-                  assistance filing is checked against Stafford Act parameters
-                  to safeguard reimbursement grants.
+                  Every field load ticket, cost log, and survivor filing aligns
+                  with Stafford Act and FAR standards to protect grant
+                  reimbursements.
                 </p>
               </div>
             </RevealOnMount>
@@ -754,10 +749,9 @@ export default function HomeClient() {
               Built to Partner. Ready to Perform.
             </h2>
             <p className="section-desc mt-3">
-              TIG believes strong partnerships create stronger outcomes and
-              actively seeks relationships with qualified subcontractors,
-              specialty contractors, consultants, suppliers, distributors,
-              professional service firms, and emerging businesses.
+              We partner with qualified subcontractors, specialty trades,
+              consultants, suppliers, and emerging businesses to deliver
+              compliant, high-impact results.
             </p>
           </div>
         </RevealOnMount>
@@ -773,9 +767,8 @@ export default function HomeClient() {
                   Prime &amp; Subcontracting
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] leading-[1.7]">
-                  We work through flexible arrangements including prime
-                  contractor/subcontractor, specialty subcontracting,
-                  professional consulting, and joint pursuits.
+                  Flexible teaming across prime/sub roles, specialty
+                  subcontracting, consulting, and joint pursuits.
                 </p>
               </div>
               <div className="pt-4 border-t border-[var(--border)] mt-6 text-[0.75rem] font-semibold text-[var(--text-bright)]">
@@ -794,9 +787,8 @@ export default function HomeClient() {
                   Bonding &amp; Compliance
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] leading-[1.7]">
-                  Capable of supporting Bid, Performance, and Payment bonds up
-                  to 100% of contract value, with project-by-project risk
-                  evaluation.
+                  Supporting Bid, Performance, and Payment bonds up to 100% of
+                  contract value with practical scope evaluation.
                 </p>
               </div>
               <div className="pt-4 border-t border-[var(--border)] mt-6 text-[0.75rem] font-semibold text-[var(--text-bright)]">
@@ -815,9 +807,8 @@ export default function HomeClient() {
                   Emergency Vendor Network
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] leading-[1.7]">
-                  Disaster recovery support teams, logistics, equipment
-                  suppliers, facilities trades, and staffing support
-                  relationships.
+                  Deployable disaster recovery teams, logistics carriers,
+                  equipment suppliers, and specialty trades.
                 </p>
               </div>
               <div className="pt-4 border-t border-[var(--border)] mt-6 text-[0.75rem] font-semibold text-[var(--text-bright)]">
@@ -850,10 +841,8 @@ export default function HomeClient() {
               </div>
               <h2 className="section-title">Service Beyond the Contract</h2>
               <p className="text-[var(--text-muted)] text-[0.95rem] leading-[1.8] mb-6">
-                Service extends beyond the work TIG performs for clients.
-                Meaningful impact is measured not only by completed projects but
-                by how the company shows up for communities when support is
-                needed most.
+                True impact is measured by how we show up for communities when
+                support is needed most—beyond completed contracts.
               </p>
               <div className="space-y-4 mb-8">
                 <button
@@ -881,9 +870,8 @@ export default function HomeClient() {
                       </span>
                     </div>
                     <p className="text-xs text-[var(--text-muted)] mt-1">
-                      Charity kickball tournament bringing community teams
-                      together to raise direct disaster relief aid for
-                      storm-displaced families.
+                      Annual charity tournament uniting community teams to fund
+                      direct relief for storm-displaced families.
                     </p>
                   </div>
                 </button>
@@ -913,9 +901,8 @@ export default function HomeClient() {
                       </span>
                     </div>
                     <p className="text-xs text-[var(--text-muted)] mt-1">
-                      Awarding academic book stipends and educational
-                      micro-grants to Orlando-area high school seniors preparing
-                      for four-year universities.
+                      Academic book stipends and micro-grants for Orlando high
+                      school seniors entering college.
                     </p>
                   </div>
                 </button>
@@ -1143,9 +1130,8 @@ export default function HomeClient() {
                 Open Positions &amp; Cadre Mobilization
               </h2>
               <p className="section-desc max-w-[650px] mt-2">
-                We recruit corporate leaders, project managers, and field-ready
-                disaster response cadre professionals across 16 active role
-                categories. Resumes flow to{" "}
+                Recruiting corporate leaders, project managers, and deployable
+                response cadres across 12 active roles. Send resumes to{" "}
                 <a
                   href="mailto:Jobs@theinfernogroup.com"
                   className="text-[var(--primary)] font-bold hover:underline"
@@ -1159,7 +1145,7 @@ export default function HomeClient() {
               href="/careers"
               className="btn btn-primary no-underline shrink-0"
             >
-              View All 16 Openings
+              View All 12 Openings
             </Link>
           </div>
 
@@ -1185,8 +1171,7 @@ export default function HomeClient() {
                 </h4>
                 <p className="text-xs text-[var(--text-muted)] mt-0.5 max-w-[600px] leading-[1.5]">
                   The Inferno Group LLC participates in E-Verify and verifies
-                  the identity and employment eligibility of newly hired
-                  employees in accordance with applicable law.
+                  employment eligibility for all newly hired personnel.
                 </p>
               </div>
             </div>
@@ -1212,8 +1197,8 @@ export default function HomeClient() {
             </div>
             <h2 className="section-title">AI &amp; Innovation</h2>
             <p className="section-desc">
-              We leverage automated data matching, encrypted storage gateways,
-              and live feeds to scale consulting execution.
+              Automated procurement matching, encrypted data gateways, and live
+              weather intelligence.
             </p>
           </div>
         </RevealOnMount>
