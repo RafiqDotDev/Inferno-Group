@@ -60,12 +60,15 @@ function HeroInteractiveBackground({
         className="w-full h-full absolute inset-0 pointer-events-none"
         style={transformStyle}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={fallbackImage}
-          alt="The Inferno Group Emergency Operations Command Center"
-          className="hero-fallback-image object-cover object-center lg:object-[65%_center] w-full h-full"
-        />
+        <picture className="w-full h-full absolute inset-0 block">
+          <source media="(max-width: 768px)" srcSet="/mobile-hero-image.jpg" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={fallbackImage}
+            alt="The Inferno Group Emergency Operations Command Center"
+            className="hero-fallback-image object-cover object-center lg:object-[65%_center] w-full h-full"
+          />
+        </picture>
       </div>
       <div className="hero-overlay"></div>
     </div>
@@ -291,7 +294,7 @@ export default function HomeClient() {
   }
 
   return (
-    <div className="page-view block">
+    <div className="page-view home-page-view block">
       {/* HERO SECTION */}
       <section className="hero mt-0">
         <HeroInteractiveBackground
