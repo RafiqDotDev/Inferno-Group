@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import RevealOnMount from "@/components/RevealOnMount";
+import { dataStore, SiteSettings } from "@/utils/dataStore";
 
 function ContactFormInner() {
   const searchParams = useSearchParams();
@@ -72,21 +73,17 @@ function ContactFormInner() {
       } else {
         setIsSubmitted(true);
         
-        // Save lead in localStorage
-        const newLead = {
-          id: Date.now().toString(),
+        // Save lead and sync to Supabase database
+        void dataStore.submitLead({
           type: "CONTACT",
           name,
           org,
+          company: org,
           email,
           phone,
           service,
           message,
-          createdAt: new Date().toISOString()
-        };
-        const currentLeads = JSON.parse(localStorage.getItem("inferno_leads") || "[]");
-        currentLeads.push(newLead);
-        localStorage.setItem("inferno_leads", JSON.stringify(currentLeads));
+        });
         
         // Clear form inputs
         setName("");
@@ -289,10 +286,38 @@ function ContactFormInner() {
 
 export default function ContactPage() {
   const [isMounted, setIsMounted] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
 
   useEffect(() => {
+    const refreshSettings = () => setSettings(dataStore.getSiteSettings());
+    refreshSettings();
     setIsMounted(true);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (!e.key || e.key === "inferno_site_settings_v1") {
+        refreshSettings();
+      }
+    };
+    const handleCMS = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail || detail.all || detail.key === "inferno_site_settings_v1") {
+        refreshSettings();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("cms-update", handleCMS);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("cms-update", handleCMS);
+    };
   }, []);
+
+  const contactEmail = settings?.contactEmail || "Contact@theinfernogroup.com";
+  const jobsEmail = settings?.careersEmail || "Jobs@theinfernogroup.com";
+  const communityEmail = settings?.communityEmail || "Community@theinfernogroup.com";
+  const address = settings?.address || "1000 Legion Place, Suite 1600, Orlando, FL 32801";
+  const windowTime = settings?.coordinationWindow || "24/7 Field Coordination Window during active declarations. Desk hours 0800-1800 EST.";
 
   return (
     <div className="page-view block">
@@ -311,7 +336,7 @@ export default function ContactPage() {
             </p>
 
             <div className="contact-direct-links">
-              <a href="mailto:Contact@theinfernogroup.com" className="contact-direct-card">
+              <a href={`mailto:${contactEmail}`} className="contact-direct-card">
                 <div className="contact-direct-icon">
                   <svg viewBox="0 0 24 24">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
@@ -320,11 +345,11 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <span className="contact-direct-label">Contracting &amp; Teaming Desk</span>
-                  <span className="contact-direct-val">Contact@theinfernogroup.com</span>
+                  <span className="contact-direct-val">{contactEmail}</span>
                 </div>
               </a>
 
-              <a href="mailto:Jobs@theinfernogroup.com" className="contact-direct-card">
+              <a href={`mailto:${jobsEmail}`} className="contact-direct-card">
                 <div className="contact-direct-icon">
                   <svg viewBox="0 0 24 24">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -335,11 +360,11 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <span className="contact-direct-label">Talent Acquisition &amp; Resumes</span>
-                  <span className="contact-direct-val">Jobs@theinfernogroup.com</span>
+                  <span className="contact-direct-val">{jobsEmail}</span>
                 </div>
               </a>
 
-              <a href="mailto:InfernoCares@theinfernogroup.com" className="contact-direct-card">
+              <a href={`mailto:${communityEmail}`} className="contact-direct-card">
                 <div className="contact-direct-icon">
                   <svg viewBox="0 0 24 24">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
@@ -347,7 +372,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <span className="contact-direct-label">Inferno Cares Desk</span>
-                  <span className="contact-direct-val">InfernoCares@theinfernogroup.com</span>
+                  <span className="contact-direct-val">{communityEmail}</span>
                 </div>
               </a>
 
@@ -360,7 +385,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <span className="contact-direct-label">Headquarters Coordinates</span>
-                  <span className="contact-direct-val">Orlando, Florida (Nationwide Deployments)</span>
+                  <span className="contact-direct-val">{address}</span>
                 </div>
               </div>
 
@@ -373,7 +398,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <span className="contact-direct-label">Coordination Window</span>
-                  <span className="contact-direct-val">Response within 12 business hours</span>
+                  <span className="contact-direct-val">{windowTime}</span>
                 </div>
               </div>
             </div>

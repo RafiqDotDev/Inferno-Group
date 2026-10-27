@@ -12,8 +12,20 @@ export default function NewsPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setArticles(dataStore.getArticles().filter((a) => a.status === "published"));
+    const refreshArticles = () => {
+      setArticles(dataStore.getArticles().filter((a) => a.status === "published"));
+    };
+
+    refreshArticles();
     setIsMounted(true);
+
+    window.addEventListener("storage", refreshArticles);
+    window.addEventListener("cms-update", refreshArticles);
+
+    return () => {
+      window.removeEventListener("storage", refreshArticles);
+      window.removeEventListener("cms-update", refreshArticles);
+    };
   }, []);
 
   const filteredArticles = articles.filter((art) => {

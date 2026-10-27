@@ -15,12 +15,24 @@ export default function ServiceDetailPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    const list = dataStore.getServices();
-    const found = list.find((s) => s.id === serviceId);
-    if (found) {
-      setService(found);
-    }
+    const refreshService = () => {
+      const list = dataStore.getServices();
+      const found = list.find((s) => s.id === serviceId);
+      if (found) {
+        setService(found);
+      }
+    };
+
+    refreshService();
     setIsMounted(true);
+
+    window.addEventListener("storage", refreshService);
+    window.addEventListener("cms-update", refreshService);
+
+    return () => {
+      window.removeEventListener("storage", refreshService);
+      window.removeEventListener("cms-update", refreshService);
+    };
   }, [serviceId]);
 
   if (!isMounted) {

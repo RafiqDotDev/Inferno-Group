@@ -9,8 +9,17 @@ export default function PrivacyPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setPrivacy(dataStore.getLegalPrivacy());
+    const refreshPrivacy = () => setPrivacy(dataStore.getLegalPrivacy());
+    refreshPrivacy();
     setIsMounted(true);
+
+    window.addEventListener("storage", refreshPrivacy);
+    window.addEventListener("cms-update", refreshPrivacy);
+
+    return () => {
+      window.removeEventListener("storage", refreshPrivacy);
+      window.removeEventListener("cms-update", refreshPrivacy);
+    };
   }, []);
 
   if (!isMounted || !privacy) {

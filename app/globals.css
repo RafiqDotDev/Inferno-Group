@@ -123,7 +123,8 @@
   }
 
   /* ── NAVIGATION ── */
-  nav {
+  nav#navbar,
+  nav:not(#admin-panel nav):not(#admin-panel *) {
     position: fixed;
     top: 0;
     left: 0;
@@ -1531,13 +1532,13 @@
     main > .page-view > .hero {
       margin-top: 0 !important;
     }
-    nav {
+    nav#navbar {
       padding: 0.85rem 5vw;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    nav.scrolled {
+    nav#navbar.scrolled {
       padding: 0.75rem 5vw;
     }
     .nav-logo {
@@ -1713,7 +1714,7 @@
 
   /* ── DESKTOP COMPACT (1025px - 1280px) ── */
   @media (min-width: 1025px) and (max-width: 1280px) {
-    nav {
+    nav#navbar {
       padding: 0.9rem 3.5vw;
     }
     .nav-links {
@@ -1895,7 +1896,7 @@
 
   /* ── EXTRA SMALL MOBILE (max-width: 360px) ── */
   @media (max-width: 360px) {
-    nav {
+    nav#navbar {
       padding: 0.75rem 3vw;
     }
     .nav-logo img {
@@ -2082,7 +2083,7 @@
   }
 
   @media (max-width: 1024px) {
-    nav > .desktop-only-cta {
+    nav#navbar > .desktop-only-cta {
       display: none !important;
     }
 
@@ -2363,6 +2364,152 @@
     .calendar-grid {
       grid-template-columns: repeat(2, 1fr) !important;
     }
+  }
+
+  /* ── ENTERPRISE ADMIN DASHBOARD DESIGN TOKENS ── */
+  #admin-panel[data-theme="light"],
+  .admin-theme-light {
+    --adm-bg: #f4f6fa;
+    --adm-sidebar-bg: #ffffff;
+    --adm-sidebar-border: #e2e8f0;
+    --adm-sidebar-header-bg: #ffffff;
+    --adm-sidebar-title: #0f172a;
+    --adm-sidebar-sub: #64748b;
+    --adm-sidebar-section: #94a3b8;
+    --adm-sidebar-btn-inactive-bg: transparent;
+    --adm-sidebar-btn-inactive-hover-bg: #f1f5f9;
+    --adm-sidebar-btn-inactive-text: #475569;
+    --adm-sidebar-btn-inactive-hover-text: #0f172a;
+    --adm-sidebar-icon-inactive-bg: #f1f5f9;
+    --adm-sidebar-icon-inactive-text: #64748b;
+    --adm-sidebar-footer-bg: #f8fafc;
+    --adm-sidebar-footer-border: #e2e8f0;
+    --adm-sidebar-toggle-bg: #ffffff;
+    --adm-sidebar-toggle-border: #cbd5e1;
+    --adm-sidebar-toggle-text: #1e293b;
+    --adm-sidebar-toggle-hover: #f1f5f9;
+    --adm-sidebar-badge-bg: #e2e8f0;
+    --adm-sidebar-badge-text: #334155;
+    --adm-sidebar-user-text: #0f172a;
+    --adm-sidebar-clearance-text: #059669;
+    --adm-sidebar-link-btn-bg: #e2e8f0;
+    --adm-sidebar-link-btn-hover: #cbd5e1;
+    --adm-sidebar-link-btn-text: #0f172a;
+    --adm-sidebar-signout-bg: #fee2e2;
+    --adm-sidebar-signout-hover: #fecaca;
+    --adm-sidebar-signout-text: #dc2626;
+
+    --adm-header-bg: #ffffff;
+    --adm-header-border: #e2e8f0;
+    --adm-card: #ffffff;
+    --adm-card-border: #e2e8f0;
+    --adm-card-subtle: #f8fafc;
+    --adm-card-hover: #f1f5f9;
+    --adm-text-primary: #0f172a;
+    --adm-text-secondary: #334155;
+    --adm-text-muted: #64748b;
+    --adm-input-bg: #ffffff;
+    --adm-input-border: #cbd5e1;
+    --adm-input-text: #0f172a;
+    --adm-input-placeholder: #94a3b8;
+    --adm-table-header-bg: #f8fafc;
+    --adm-table-row-hover: #f8fafc;
+    --adm-modal-bg: #ffffff;
+    --adm-modal-border: #e2e8f0;
+    --adm-modal-overlay: rgba(15, 23, 42, 0.65);
+    color-scheme: light;
+  }
+
+  #admin-panel[data-theme="dark"],
+  .admin-theme-dark {
+    --adm-bg: #060b18;
+    --adm-sidebar-bg: #091124;
+    --adm-sidebar-border: #1a2744;
+    --adm-sidebar-header-bg: #091124;
+    --adm-sidebar-title: #ffffff;
+    --adm-sidebar-sub: #94a3b8;
+    --adm-sidebar-section: #64748b;
+    --adm-sidebar-btn-inactive-bg: transparent;
+    --adm-sidebar-btn-inactive-hover-bg: rgba(255, 255, 255, 0.08);
+    --adm-sidebar-btn-inactive-text: #cbd5e1;
+    --adm-sidebar-btn-inactive-hover-text: #ffffff;
+    --adm-sidebar-icon-inactive-bg: rgba(255, 255, 255, 0.08);
+    --adm-sidebar-icon-inactive-text: #94a3b8;
+    --adm-sidebar-footer-bg: #050a16;
+    --adm-sidebar-footer-border: #1a2744;
+    --adm-sidebar-toggle-bg: rgba(255, 255, 255, 0.08);
+    --adm-sidebar-toggle-border: rgba(255, 255, 255, 0.12);
+    --adm-sidebar-toggle-text: #ffffff;
+    --adm-sidebar-toggle-hover: rgba(255, 255, 255, 0.15);
+    --adm-sidebar-badge-bg: rgba(255, 255, 255, 0.15);
+    --adm-sidebar-badge-text: #ffffff;
+    --adm-sidebar-user-text: #ffffff;
+    --adm-sidebar-clearance-text: #34d399;
+    --adm-sidebar-link-btn-bg: rgba(255, 255, 255, 0.08);
+    --adm-sidebar-link-btn-hover: rgba(255, 255, 255, 0.15);
+    --adm-sidebar-link-btn-text: #ffffff;
+    --adm-sidebar-signout-bg: rgba(239, 68, 68, 0.15);
+    --adm-sidebar-signout-hover: rgba(239, 68, 68, 0.25);
+    --adm-sidebar-signout-text: #fca5a5;
+
+    --adm-header-bg: #0b1328;
+    --adm-header-border: #1a2744;
+    --adm-card: #0d172e;
+    --adm-card-border: #1c2c4c;
+    --adm-card-subtle: #101d3a;
+    --adm-card-hover: #142448;
+    --adm-text-primary: #f8fafc;
+    --adm-text-secondary: #cbd5e1;
+    --adm-text-muted: #94a3b8;
+    --adm-input-bg: #081023;
+    --adm-input-border: #1e3056;
+    --adm-input-text: #f8fafc;
+    --adm-input-placeholder: #64748b;
+    --adm-table-header-bg: #0e1933;
+    --adm-table-row-hover: #132244;
+    --adm-modal-bg: #0d172e;
+    --adm-modal-border: #1c2c4c;
+    --adm-modal-overlay: rgba(0, 0, 0, 0.8);
+    color-scheme: dark;
+  }
+
+  #admin-panel {
+    background-color: var(--adm-bg) !important;
+    color: var(--adm-text-secondary);
+    min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  #admin-panel select option {
+    background-color: var(--adm-card);
+    color: var(--adm-text-primary);
+  }
+
+  #admin-panel input::placeholder,
+  #admin-panel textarea::placeholder {
+    color: var(--adm-input-placeholder);
+  }
+
+  /* ── ADMIN SIDEBAR NAVIGATION RESET (Prevents public navbar style bleed) ── */
+  #admin-panel nav,
+  #admin-panel aside nav,
+  #admin-panel .admin-sidebar-nav {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    display: block !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0.75rem 0.4rem !important;
+    width: 100% !important;
+    height: auto !important;
+    z-index: 1 !important;
+    transition: none !important;
   }
 
   /* ── ADMIN PANEL MOBILE RESPONSIVENESS OVERRIDES ── */

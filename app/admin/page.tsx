@@ -1,0 +1,6149 @@
+"use client";
+
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import {
+  dataStore,
+  AdminLead,
+  HeroData,
+  StatItem,
+  FeatureCard,
+  AboutData,
+  TeamMember,
+  ServiceItem,
+  Job,
+  Article,
+  CommunityStory,
+  TestimonialItem,
+  FAQItem,
+  LegalPage,
+  SiteSettings,
+  PartnerCardItem,
+  QuizQuestionItem,
+} from "@/utils/dataStore";
+import type { KnowledgeBaseItem } from "@/lib/chatbotData";
+
+// Active Tab navigation items
+type AdminTab =
+  | "overview"
+  | "leads"
+  | "bookings"
+  | "hero"
+  | "about"
+  | "services"
+  | "contracts"
+  | "partnerships"
+  | "news"
+  | "careers"
+  | "community"
+  | "quiz"
+  | "knowledge"
+  | "settings";
+
+function AdminViewButton({
+  onClick,
+  label = "View",
+  className = "",
+  title = "View Details",
+}: {
+  onClick: () => void;
+  label?: string;
+  className?: string;
+  title?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] text-[var(--adm-text-primary)] hover:border-[var(--primary)] hover:text-[var(--primary)] hover:bg-[rgba(225,77,24,0.08)] transition-all cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)] active:scale-95 ${className}`}
+    >
+      <svg
+        className="w-3.5 h-3.5 shrink-0 opacity-80"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+      {label && <span>{label}</span>}
+    </button>
+  );
+}
+
+function AdminEditButton({
+  onClick,
+  label = "Edit",
+  className = "",
+  title = "Edit",
+}: {
+  onClick: () => void;
+  label?: string;
+  className?: string;
+  title?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] text-[var(--adm-text-primary)] hover:border-[var(--primary)] hover:text-[var(--primary)] hover:bg-[rgba(225,77,24,0.08)] transition-all cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)] active:scale-95 ${className}`}
+    >
+      <svg
+        className="w-3.5 h-3.5 shrink-0 opacity-80"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+      </svg>
+      {label && <span>{label}</span>}
+    </button>
+  );
+}
+
+function AdminDeleteButton({
+  onClick,
+  label = "Delete",
+  className = "",
+  title = "Delete",
+}: {
+  onClick: () => void;
+  label?: string;
+  className?: string;
+  title?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-red-500/25 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)] active:scale-95 ${className}`}
+    >
+      <svg
+        className="w-3.5 h-3.5 shrink-0"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      </svg>
+      {label && <span>{label}</span>}
+    </button>
+  );
+}
+
+function AdminModalCloseButton({
+  onClick,
+  title = "Close dialog",
+  className = "",
+}: {
+  onClick: () => void;
+  title?: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={title}
+      title={title}
+      className={`inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] text-[var(--adm-text-muted)] hover:text-[var(--adm-text-primary)] hover:border-[var(--primary)] hover:bg-[rgba(225,77,24,0.08)] transition-all cursor-pointer shadow-xs active:scale-90 ${className}`}
+    >
+      <svg
+        className="w-4 h-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+  );
+}
+
+function ImageDropzone({
+  value,
+  onChange,
+  label,
+  aspectRatio = "video",
+  placeholderHint = "Drop PNG, JPG, WEBP or SVG here, or click to browse",
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  label?: string;
+  aspectRatio?: "video" | "square" | "wide";
+  placeholderHint?: string;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [showManualUrl, setShowManualUrl] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (file: File) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (result) {
+        onChange(result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const onDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const hasImage = Boolean(value && value.trim().length > 0);
+
+  const previewDimensions =
+    aspectRatio === "square"
+      ? "w-32 h-32"
+      : aspectRatio === "wide"
+      ? "w-full h-36"
+      : "w-full h-44";
+
+  return (
+    <div className="space-y-2">
+      {label && (
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-semibold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+            {label}
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowManualUrl(!showManualUrl)}
+            className="text-[11px] text-[var(--adm-text-muted)] hover:text-[var(--primary)] transition-colors underline cursor-pointer"
+          >
+            {showManualUrl ? "Hide manual URL" : "Enter path/URL manually"}
+          </button>
+        </div>
+      )}
+
+      {/* Hidden native file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFile(file);
+          // reset input so selecting the same file again triggers change
+          e.target.value = "";
+        }}
+      />
+
+      {/* Interactive Drag & Drop Area */}
+      <div
+        onDragOver={onDragOver}
+        onDragEnter={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        onClick={() => fileInputRef.current?.click()}
+        className={`relative group cursor-pointer rounded-2xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center p-4 text-center ${
+          isDragging
+            ? "border-[var(--primary)] bg-[rgba(225,77,24,0.12)] scale-[1.01]"
+            : "border-[var(--adm-card-border)] hover:border-[var(--primary)] bg-[var(--adm-card-subtle)] hover:bg-[var(--adm-card)]"
+        }`}
+      >
+        {hasImage ? (
+          <div className="w-full flex flex-col items-center gap-3">
+            <div
+              className={`relative rounded-xl overflow-hidden border border-[var(--adm-card-border)] bg-[var(--adm-card)] shadow-xs ${previewDimensions} flex items-center justify-center`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={value}
+                alt={label || "Uploaded preview"}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <span className="px-3 py-1.5 text-xs font-semibold text-white bg-black/70 backdrop-blur-xs rounded-xl flex items-center gap-1.5 shadow-md">
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  Click or Drop to Replace
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              <span className="text-[11px] text-[var(--adm-text-muted)] truncate max-w-xs font-mono">
+                {value.startsWith("data:") ? "Image loaded (embedded data)" : value}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange("");
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-red-500 hover:text-white hover:bg-red-500/80 border border-red-500/30 transition-all cursor-pointer"
+                title="Remove image"
+              >
+                <svg
+                  className="w-3 h-3"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="py-5 px-3 flex flex-col items-center">
+            <div className="w-12 h-12 mb-2.5 rounded-2xl bg-[rgba(225,77,24,0.1)] text-[var(--primary)] flex items-center justify-center transition-transform group-hover:scale-110 shadow-xs">
+              <svg
+                className="w-6 h-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+                <path d="M12 12v9" />
+                <path d="m16 16-4-4-4 4" />
+              </svg>
+            </div>
+            <p className="text-xs font-semibold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+              Drag &amp; drop an image here, or{" "}
+              <span className="text-[var(--primary)] underline underline-offset-2">browse files</span>
+            </p>
+            <p className="text-[11px] text-[var(--adm-text-muted)] mt-1">
+              {placeholderHint}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Manual URL input toggle */}
+      {showManualUrl && (
+        <div className="flex gap-2 items-center pt-1">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="/image.png or https://example.com/image.jpg"
+            className="flex-1 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl px-3 py-2 text-xs outline-none text-[var(--adm-text-primary)]"
+          />
+          <button
+            type="button"
+            onClick={() => setShowManualUrl(false)}
+            className="px-3 py-2 text-xs rounded-xl bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] text-[var(--adm-text-secondary)] hover:text-[var(--adm-text-primary)] cursor-pointer"
+          >
+            Done
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getTabIcon(tabId: string) {
+  switch (tabId) {
+    case "overview":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect width="7" height="9" x="3" y="3" rx="1" />
+          <rect width="7" height="5" x="14" y="3" rx="1" />
+          <rect width="7" height="9" x="14" y="12" rx="1" />
+          <rect width="7" height="5" x="3" y="16" rx="1" />
+        </svg>
+      );
+    case "leads":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+          <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+        </svg>
+      );
+    case "bookings":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect width="18" height="18" x="3" y="4" rx="2" />
+          <line x1="16" x2="16" y1="2" y2="6" />
+          <line x1="8" x2="8" y1="2" y2="6" />
+          <line x1="3" x2="21" y1="10" y2="10" />
+          <path d="M12 14v2l1.5 1.5" />
+        </svg>
+      );
+    case "hero":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+        </svg>
+      );
+    case "about":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      );
+    case "services":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect width="20" height="14" x="2" y="7" rx="2" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+        </svg>
+      );
+    case "contracts":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" x2="8" y1="13" y2="13" />
+          <line x1="16" x2="8" y1="17" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+      );
+    case "partnerships":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
+          <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2" />
+          <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
+          <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+        </svg>
+      );
+    case "news":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+          <path d="M18 14h-8" />
+          <path d="M15 18h-5" />
+          <path d="M10 6h8v4h-8V6Z" />
+        </svg>
+      );
+    case "careers":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="8.5" cy="7" r="4" />
+          <line x1="20" x2="20" y1="8" y2="14" />
+          <line x1="23" x2="17" y1="11" y2="11" />
+        </svg>
+      );
+    case "community":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+        </svg>
+      );
+    case "quiz":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <path d="m9 14 2 2 4-4" />
+        </svg>
+      );
+    case "knowledge":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+          <line x1="12" x2="12.01" y1="17" y2="17" />
+        </svg>
+      );
+    case "settings":
+      return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+export default function AdminPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const supabase = useMemo(() => createClient(), []);
+
+  // ── AUTH STATE ──
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const isResetMode = searchParams.get("mode") === "reset";
+
+  // ── THEME STATE (LIGHT & DARK MODE) ──
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const isDark = theme === "dark";
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("inferno_admin_theme") as
+        | "light"
+        | "dark"
+        | null;
+      if (saved === "light" || saved === "dark") {
+        setTheme(saved);
+      } else if (
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ) {
+        setTheme("dark");
+      } else {
+        setTheme("light");
+      }
+    } catch {
+      setTheme("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    try {
+      localStorage.setItem("inferno_admin_theme", nextTheme);
+    } catch (e) {
+      console.warn("Could not save theme", e);
+    }
+  };
+
+  // ── ACTIVE NAVIGATION TAB ──
+  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const isExpanded = isSidebarHovered || isSidebarOpen;
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // ── CMS DATA STATES ──
+  const [leads, setLeads] = useState<AdminLead[]>([]);
+  const [hero, setHero] = useState<HeroData | null>(null);
+  const [stats, setStats] = useState<StatItem[]>([]);
+  const [aiFeatures, setAiFeatures] = useState<FeatureCard[]>([]);
+  const [about, setAbout] = useState<AboutData | null>(null);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [capabilities, setCapabilities] = useState<Capability[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [communityStories, setCommunityStories] = useState<CommunityStory[]>(
+    [],
+  );
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
+  const [faqs, setFaqs] = useState<FAQItem[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [chatbotQA, setChatbotQA] = useState<KnowledgeBaseItem[]>([]);
+  const [privacy, setPrivacy] = useState<LegalPage | null>(null);
+  const [conduct, setConduct] = useState<LegalPage | null>(null);
+  const [partnerCards, setPartnerCards] = useState<PartnerCardItem[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestionItem[]>([]);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+
+  // ── LEADS CRM FILTERS & INSPECTION ──
+  const [leadSearch, setLeadSearch] = useState("");
+  const [leadTypeFilter, setLeadTypeFilter] = useState("ALL");
+  const [leadStatusFilter, setLeadStatusFilter] = useState("ALL");
+  const [selectedLead, setSelectedLead] = useState<AdminLead | null>(null);
+
+  // ── BOOKINGS & CALENDAR SYNC STATE ──
+  const [dbBookings, setDbBookings] = useState<any[]>([]);
+  const [bookingRealtimeStatus, setBookingRealtimeStatus] = useState<
+    "connecting" | "live" | "polling"
+  >("connecting");
+  const [bookingLoadError, setBookingLoadError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSyncingCalendar, setIsSyncingCalendar] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+  const [activeSlotsCount, setActiveSlotsCount] = useState<number | null>(null);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+
+  // ── SUPABASE DATABASE CMS SYNC STATE ──
+  const [dbSyncStatus, setDbSyncStatus] = useState<
+    "synced" | "syncing" | "offline"
+  >("synced");
+  const [isSyncingDb, setIsSyncingDb] = useState(false);
+  const [lastDbSync, setLastDbSync] = useState<Date | null>(null);
+
+  // ── MODAL EDITING STATE ──
+  const [editModal, setEditModal] = useState<{
+    type: string;
+    item: any;
+    isNew: boolean;
+  } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const fetchSupabaseBookings = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*, booking_slots(*)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setDbBookings(data ?? []);
+      setBookingLoadError(null);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error("Unable to refresh CMS bookings:", error);
+      setBookingLoadError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load bookings. Check the Supabase connection and table access.",
+      );
+      setBookingRealtimeStatus("polling");
+    }
+  }, [supabase]);
+
+  // ── LOAD ALL CMS DATA ──
+  const loadAllData = useCallback(() => {
+    setLeads(dataStore.getLeads());
+    setHero(dataStore.getHero());
+    setStats(dataStore.getStats());
+    setAiFeatures(dataStore.getAIInnovation());
+    setAbout(dataStore.getAbout());
+    setTeam(dataStore.getTeam());
+    setServices(dataStore.getServices());
+    setContracts(dataStore.getContracts());
+    setCapabilities(dataStore.getCapabilities());
+    setArticles(dataStore.getArticles());
+    setJobs(dataStore.getJobs());
+    setCommunityStories(dataStore.getCommunityStories());
+    setTestimonials(dataStore.getTestimonials());
+    setFaqs(dataStore.getFAQs());
+    setResources(dataStore.getResources());
+    setChatbotQA(dataStore.getChatbotQA());
+    setPrivacy(dataStore.getLegalPrivacy());
+    setConduct(dataStore.getLegalConduct());
+    setPartnerCards(dataStore.getPartnerCards());
+    setQuizQuestions(dataStore.getQuizQuestions());
+    setSiteSettings(dataStore.getSiteSettings());
+    return fetchSupabaseBookings();
+  }, [fetchSupabaseBookings]);
+
+  // ── SUPABASE CMS DATABASE SYNC HANDLERS ──
+  const handleSyncFromSupabase = useCallback(
+    async (quiet = false) => {
+      setIsSyncingDb(true);
+      setDbSyncStatus("syncing");
+      try {
+        const res = await dataStore.syncFromSupabase();
+        if (res.success) {
+          setDbSyncStatus("synced");
+          setLastDbSync(new Date());
+          loadAllData();
+          if (!quiet)
+            showToast(
+              `Supabase synced successfully (${res.count} collections live).`,
+            );
+        } else {
+          setDbSyncStatus("offline");
+          if (!quiet) showToast("Operating from local cache.");
+        }
+      } catch {
+        setDbSyncStatus("offline");
+        if (!quiet) showToast("Database sync notice.");
+      } finally {
+        setIsSyncingDb(false);
+      }
+    },
+    [loadAllData],
+  );
+
+  const handlePushAllToSupabase = async () => {
+    setIsSyncingDb(true);
+    try {
+      const success = await dataStore.pushAllToSupabase();
+      if (success) {
+        setDbSyncStatus("synced");
+        setLastDbSync(new Date());
+        showToast(
+          "All CMS records pushed to Supabase PostgreSQL database successfully.",
+        );
+      } else {
+        showToast("Database push failed. Please check network/credentials.");
+      }
+    } catch {
+      showToast("Database push failed.");
+    } finally {
+      setIsSyncingDb(false);
+    }
+  };
+
+  // ── CHECK AUTH ON MOUNT ──
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (session?.user) {
+          setIsAuthenticated(true);
+          setUserEmail(session.user.email ?? "Admin");
+          loadAllData();
+          void handleSyncFromSupabase(true);
+          return;
+        }
+      } catch (error) {
+        console.error("Unable to verify the Supabase session:", error);
+      }
+      setIsAuthenticated(false);
+    };
+
+    void checkAuth();
+  }, [loadAllData, supabase]);
+
+  // Keep browser-stored CMS content current across tabs and refresh bookings live.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handleStorage = (event: StorageEvent) => {
+      const key = event?.key;
+      if (
+        !key ||
+        (typeof key === "string" &&
+          key.startsWith("inferno_") &&
+          key !== "inferno_admin_theme")
+      ) {
+        loadAllData();
+        setLastUpdated(new Date());
+      }
+    };
+    const handleCMS = () => {
+      loadAllData();
+      setLastUpdated(new Date());
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadAllData();
+      }
+    };
+    const refreshInterval = window.setInterval(() => {
+      loadAllData();
+    }, 30_000);
+    const channel = supabase
+      .channel("admin-dashboard-bookings")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        () => void fetchSupabaseBookings(),
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          setBookingRealtimeStatus("live");
+          void fetchSupabaseBookings();
+        } else {
+          setBookingRealtimeStatus("polling");
+        }
+      });
+
+    const handleSyncState = (e: Event) => {
+      const custom = e as CustomEvent<{
+        status: "idle" | "syncing" | "synced" | "error";
+        key?: string;
+        timestamp?: number;
+      }>;
+      if (!custom.detail) return;
+      if (custom.detail.status === "syncing") {
+        setIsSyncingDb(true);
+        setDbSyncStatus("syncing");
+      } else if (custom.detail.status === "synced") {
+        setIsSyncingDb(false);
+        setDbSyncStatus("synced");
+        setLastDbSync(new Date(custom.detail.timestamp || Date.now()));
+      } else if (custom.detail.status === "error") {
+        setIsSyncingDb(false);
+        setDbSyncStatus("offline");
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("cms-update", handleCMS);
+    window.addEventListener("cms-sync-state", handleSyncState);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(refreshInterval);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("cms-update", handleCMS);
+      window.removeEventListener("cms-sync-state", handleSyncState);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      void supabase.removeChannel(channel);
+    };
+  }, [fetchSupabaseBookings, isAuthenticated, loadAllData, supabase]);
+
+  // ── AUTOMATIC CMS SYNC ON FORM EDITS (Debounced 1.5s) ──
+  const heroInitialRef = useRef(true);
+  useEffect(() => {
+    if (heroInitialRef.current) {
+      if (hero) heroInitialRef.current = false;
+      return;
+    }
+    if (!hero) return;
+    const t = setTimeout(() => {
+      dataStore.saveHero(hero);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [hero]);
+
+  const aboutInitialRef = useRef(true);
+  useEffect(() => {
+    if (aboutInitialRef.current) {
+      if (about) aboutInitialRef.current = false;
+      return;
+    }
+    if (!about) return;
+    const t = setTimeout(() => {
+      dataStore.saveAbout(about);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [about]);
+
+  const settingsInitialRef = useRef(true);
+  useEffect(() => {
+    if (settingsInitialRef.current) {
+      if (siteSettings) settingsInitialRef.current = false;
+      return;
+    }
+    if (!siteSettings) return;
+    const t = setTimeout(() => {
+      dataStore.saveSiteSettings(siteSettings);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [siteSettings]);
+
+  // ── AUTH HANDLERS ──
+  const handlePasswordSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: authPassword,
+      });
+
+      if (error) {
+        setAuthError(error.message);
+      } else if (data.session) {
+        setIsAuthenticated(true);
+        setUserEmail(data.session.user.email ?? "admin@theinfernogroup.com");
+        loadAllData();
+        showToast("Authenticated via Supabase Auth.");
+      }
+    } catch (error) {
+      setAuthError(
+        error instanceof Error ? error.message : "Failed to authenticate.",
+      );
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authEmail) {
+      setAuthError(
+        "Please provide your admin email to receive reset instructions.",
+      );
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(authEmail, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/admin?mode=reset`,
+      });
+      if (error) throw error;
+      setResetSuccess(true);
+    } catch (error) {
+      setAuthError(
+        error instanceof Error
+          ? error.message
+          : "Unable to send password reset transmission.",
+      );
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error("Unable to sign out of the CMS:", error);
+      showToast(
+        error instanceof Error
+          ? `Sign out failed: ${error.message}`
+          : "Sign out failed. Please try again.",
+      );
+      return;
+    }
+    setIsAuthenticated(false);
+    setUserEmail(null);
+    showToast("Signed out of Admin Operations Desk.");
+  };
+
+  // ── CRM ACTIONS ──
+  const updateLeadStatus = (
+    leadId: string,
+    status: "new" | "reviewed" | "contacted" | "archived",
+  ) => {
+    const updated = leads.map((l) => (l.id === leadId ? { ...l, status } : l));
+    setLeads(updated);
+    dataStore.saveLeads(updated);
+    if (selectedLead && selectedLead.id === leadId) {
+      setSelectedLead({ ...selectedLead, status });
+    }
+    showToast(`Lead marked as ${status.toUpperCase()} & synced to Supabase`);
+  };
+
+  const saveLeadAdminNotes = (leadId: string, adminNotes: string) => {
+    const updated = leads.map((l) =>
+      l.id === leadId ? { ...l, adminNotes } : l,
+    );
+    setLeads(updated);
+    dataStore.saveLeads(updated);
+    if (selectedLead && selectedLead.id === leadId) {
+      setSelectedLead({ ...selectedLead, adminNotes });
+    }
+    showToast("Admin notes updated & synced to Supabase.");
+  };
+
+  const deleteLead = (leadId: string) => {
+    if (
+      !confirm("Are you sure you want to permanently delete this transmission?")
+    )
+      return;
+    const updated = leads.filter((l) => l.id !== leadId);
+    setLeads(updated);
+    dataStore.saveLeads(updated);
+    if (selectedLead?.id === leadId) setSelectedLead(null);
+    showToast("Transmission record deleted & synced to Supabase.");
+  };
+
+  const exportLeadsCSV = () => {
+    if (filteredLeads.length === 0) {
+      alert("No leads available to export with current filters.");
+      return;
+    }
+    const headers = [
+      "ID",
+      "Type",
+      "Created At",
+      "Status",
+      "Name / Contact",
+      "Email",
+      "Phone",
+      "Company / Organization",
+      "Details / Scope",
+      "Admin Notes",
+    ];
+    const rows = filteredLeads.map((l) => [
+      `"${l.id}"`,
+      `"${l.type}"`,
+      `"${new Date(l.createdAt).toLocaleString()}"`,
+      `"${l.status || "new"}"`,
+      `"${l.name || l.contactName || "N/A"}"`,
+      `"${l.email || l.contactEmail || "N/A"}"`,
+      `"${l.phone || "N/A"}"`,
+      `"${l.company || l.partnerCompany || l.org || "N/A"}"`,
+      `"${(l.message || l.notes || l.jobTitle || l.solicitation || l.resourceTitle || "").replace(/"/g, '""')}"`,
+      `"${(l.adminNotes || "").replace(/"/g, '""')}"`,
+    ]);
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `Inferno_Leads_Export_${new Date().toISOString().slice(0, 10)}.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Exported leads to CSV.");
+  };
+
+  // Download Resume payload if Base64 exists or generate text dossier
+  const handleDownloadResume = (lead: AdminLead) => {
+    if (lead.resumeData && lead.resumeData.startsWith("data:")) {
+      const link = document.createElement("a");
+      link.href = lead.resumeData;
+      link.download = lead.resumeName || `Resume_${lead.name || lead.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+    // Text fallback dossier
+    const textContent =
+      `=================================================================\n` +
+      `THE INFERNO GROUP LLC - APPLICANT DOSSIER\n` +
+      `=================================================================\n\n` +
+      `ROLE APPLIED: ${lead.jobTitle || "Cadre Position"}\n` +
+      `CANDIDATE NAME: ${lead.name}\n` +
+      `EMAIL: ${lead.email}\n` +
+      `PHONE: ${lead.phone || "N/A"}\n` +
+      `TRANSMITTED ON: ${new Date(lead.createdAt).toLocaleString()}\n\n` +
+      `COVER STATEMENT:\n${lead.cover || "None provided."}\n\n` +
+      `RESUME RECORD: ${lead.resumeName || "Uploaded via Portal"}\n`;
+    const blob = new Blob([textContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Applicant_${(lead.name || "Cadre").replace(/\s+/g, "_")}_Dossier.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // ── CALENDAR & BOOKINGS ACTIONS ──
+  const handleTriggerCalendarSync = async () => {
+    setIsSyncingCalendar(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch("/api/bookings/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Calendar sync failed.");
+      setSyncResult(
+        `Sync Successful: Evaluated ${data.totalSlotsEvaluated} slots, detected ${data.syncedRangesCount} external calendar busy windows.`,
+      );
+      showToast("Google & Outlook calendars synchronized.");
+      fetchSupabaseBookings();
+    } catch (err: any) {
+      setSyncResult(
+        `Sync Error: ${err.message || "Failed to reach booking sync endpoint."}`,
+      );
+    } finally {
+      setIsSyncingCalendar(false);
+    }
+  };
+
+  const handleInspectSlots = async () => {
+    setIsLoadingSlots(true);
+    try {
+      const res = await fetch("/api/bookings/slots?days=7");
+      const data = await res.json();
+      if (data.slots) {
+        setActiveSlotsCount(data.slots.length);
+        showToast(
+          `Retrieved ${data.slots.length} available slots for the next 7 business days.`,
+        );
+      }
+    } catch (err: any) {
+      alert("Failed to query live slots: " + err.message);
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
+  // ── BACKUP, EXPORT & FACTORY RESET ──
+  const handleExportFullJSON = () => {
+    const fullSnapshot = dataStore.exportFullSnapshot();
+    const dataStr =
+      "data:text/json;charset=utf-8," +
+      encodeURIComponent(JSON.stringify(fullSnapshot, null, 2));
+    const dlAnchor = document.createElement("a");
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute(
+      "download",
+      `TheInfernoGroup_CMS_Backup_${new Date().toISOString().slice(0, 10)}.json`,
+    );
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+    showToast("Full CMS state exported to JSON.");
+  };
+
+  const handleImportJSONClick = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileReader = new FileReader();
+    if (!e.target.files || e.target.files.length === 0) return;
+    fileReader.readAsText(e.target.files[0], "UTF-8");
+    fileReader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        dataStore.importFullSnapshot(parsed);
+        void dataStore.pushAllToSupabase();
+        loadAllData();
+        showToast("CMS snapshot restored and synced to Supabase successfully!");
+      } catch {
+        alert(
+          "Invalid JSON format. Please provide an authentic Inferno CMS snapshot.",
+        );
+      }
+    };
+  };
+
+  const handleResetToFactoryDefaults = () => {
+    const confirmed = confirm(
+      "WARNING: This will reset all CMS content (Hero, Services, Team, FAQs, Knowledge Base, Contracts, etc.) to factory default definitions and sync to Supabase. Do you wish to continue?",
+    );
+    if (!confirmed) return;
+    dataStore.resetAllToDefaults();
+    void dataStore.pushAllToSupabase();
+    loadAllData();
+    showToast("CMS restored to factory defaults and synced to Supabase.");
+  };
+
+  // Filtered Leads
+  const filteredLeads = useMemo(() => {
+    return leads.filter((item) => {
+      const matchesType =
+        leadTypeFilter === "ALL" ||
+        item.type.toUpperCase() === leadTypeFilter.toUpperCase();
+      const status = item.status || "new";
+      const matchesStatus =
+        leadStatusFilter === "ALL" || status === leadStatusFilter;
+      const q = leadSearch.toLowerCase();
+      const matchesQuery =
+        !q ||
+        (item.name && item.name.toLowerCase().includes(q)) ||
+        (item.contactName && item.contactName.toLowerCase().includes(q)) ||
+        (item.email && item.email.toLowerCase().includes(q)) ||
+        (item.contactEmail && item.contactEmail.toLowerCase().includes(q)) ||
+        (item.company && item.company.toLowerCase().includes(q)) ||
+        (item.org && item.org.toLowerCase().includes(q)) ||
+        (item.jobTitle && item.jobTitle.toLowerCase().includes(q)) ||
+        (item.solicitation && item.solicitation.toLowerCase().includes(q)) ||
+        (item.message && item.message.toLowerCase().includes(q));
+      return matchesType && matchesStatus && matchesQuery;
+    });
+  }, [leads, leadTypeFilter, leadStatusFilter, leadSearch]);
+
+  // Combined Bookings
+  const combinedBookings = useMemo(() => {
+    const localBookings = leads
+      .filter((l) => l.type === "BOOKING")
+      .map((l) => ({
+        id: l.id,
+        full_name: l.name || "Anonymous Client",
+        email: l.email || "N/A",
+        company: l.company || "N/A",
+        meeting_type: l.consultType || "Consultation",
+        created_at: l.createdAt,
+        slot_date: l.date || "Scheduled",
+        slot_time: l.time || "",
+        timezone: l.timezone || "EST",
+        notes: l.notes || "",
+        source: "Local Transmission",
+      }));
+
+    const remote = dbBookings.map((b) => ({
+      id: b.id,
+      full_name: b.full_name,
+      email: b.email,
+      company: b.company || "N/A",
+      meeting_type: b.meeting_type,
+      created_at: b.created_at,
+      slot_date: b.booking_slots
+        ? new Date(b.booking_slots.start_time).toLocaleDateString()
+        : "N/A",
+      slot_time: b.booking_slots
+        ? new Date(b.booking_slots.start_time).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "N/A",
+      timezone: b.booking_slots?.timezone || "EST",
+      notes: b.notes || "",
+      source: "Supabase Database",
+    }));
+
+    return [...remote, ...localBookings];
+  }, [leads, dbBookings]);
+
+  const recentLeads = useMemo(
+    () =>
+      [...leads]
+        .sort(
+          (first, second) =>
+            new Date(second.createdAt).getTime() -
+            new Date(first.createdAt).getTime(),
+        )
+        .slice(0, 6),
+    [leads],
+  );
+
+  const leadActivityByDay = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (6 - index));
+      const nextDate = new Date(date);
+      nextDate.setDate(date.getDate() + 1);
+
+      return {
+        label: date.toLocaleDateString(undefined, { weekday: "short" }),
+        count: leads.filter((lead) => {
+          const createdAt = new Date(lead.createdAt).getTime();
+          return createdAt >= date.getTime() && createdAt < nextDate.getTime();
+        }).length,
+      };
+    });
+  }, [leads]);
+
+  const handleDashboardRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await loadAllData();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // ── AUTH GATE SCREEN ──
+  if (isAuthenticated === null) {
+    return (
+      <div
+        id="admin-panel"
+        data-theme={theme}
+        className="min-h-screen bg-[var(--navy)] flex items-center justify-center text-white font-[family-name:var(--font-outfit)]"
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-9 h-9 border-3 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm font-mono text-white/90 font-medium tracking-wider">
+            Verifying Admin Security Clearance...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div
+        id="admin-panel"
+        data-theme={theme}
+        className="min-h-screen bg-[var(--navy)] flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden font-[family-name:var(--font-outfit)]"
+      >
+        {/* Floating Theme Toggle on Auth Screen */}
+        <div className="absolute top-6 right-6 z-20">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md transition-all cursor-pointer shadow-md"
+            title={`Switch to ${theme === "dark" ? "Light" : "Dark"} mode`}
+          >
+            <span>{theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}</span>
+          </button>
+        </div>
+
+        {/* Ambient Brand Spotlights */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-[radial-gradient(circle,rgba(225,77,24,0.18)_0%,transparent_70%)] pointer-events-none"></div>
+        <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(26,86,196,0.15)_0%,transparent_70%)] pointer-events-none"></div>
+
+        <div className="w-full max-w-md bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-[24px] shadow-2xl p-8 z-10">
+          {/* Logo & Header */}
+          <div className="flex flex-col items-center text-center mb-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="The Inferno Group"
+              className="h-11 mb-3"
+            />
+            <h2 className="text-xl font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+              Operations Desk &amp; CMS
+            </h2>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-xs text-[var(--adm-text-muted)] font-mono font-semibold tracking-wider">
+                SECURE GOVCON PORTAL
+              </span>
+            </div>
+          </div>
+
+          {authError && (
+            <div className="mb-6 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-600 dark:text-red-400 text-xs leading-relaxed font-semibold">
+              {authError}
+            </div>
+          )}
+
+          {resetSuccess ? (
+            <div className="text-center py-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto mb-3 text-xl font-bold">
+                ✓
+              </div>
+              <h3 className="text-[var(--adm-text-primary)] font-semibold text-sm mb-1 font-[family-name:var(--font-space-grotesk)]">
+                Password Reset Instructions Sent
+              </h3>
+              <p className="text-xs text-[var(--adm-text-muted)] mb-6">
+                Check your inbox for a secure token link to update your
+                administrative credentials.
+              </p>
+              <button
+                onClick={() => setResetSuccess(false)}
+                className="text-xs text-[var(--primary)] font-semibold hover:underline"
+              >
+                ← Return to Sign In
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handlePasswordSignIn} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider mb-1.5 font-[family-name:var(--font-space-grotesk)]">
+                  Administrative Identifier
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  placeholder="admin@theinfernogroup.com"
+                  className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 text-[var(--adm-text-primary)] text-sm rounded-xl px-4 py-3 outline-none transition-all placeholder:text-[var(--adm-text-muted)]"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider font-[family-name:var(--font-space-grotesk)]">
+                    Passcode / Credential Key
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handlePasswordReset}
+                    className="text-xs text-[var(--adm-text-muted)] hover:text-[var(--primary)] transition-colors font-semibold"
+                  >
+                    Forgot passcode?
+                  </button>
+                </div>
+                <input
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 text-[var(--adm-text-primary)] text-sm rounded-xl px-4 py-3 outline-none transition-all placeholder:text-[var(--adm-text-muted)]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full mt-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white font-bold py-3 px-4 rounded-xl text-sm transition-all shadow-lg shadow-[var(--primary)]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer font-[family-name:var(--font-space-grotesk)]"
+              >
+                {authLoading ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  <>
+                    Authenticate Access
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M5 12h14M12 5l7 7-7 7"></path>
+                    </svg>
+                  </>
+                )}
+              </button>
+
+              <div className="pt-4 border-t border-[var(--adm-card-border)] text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthEmail("admin@theinfernogroup.com");
+                    setAuthPassword("inferno2026");
+                  }}
+                  className="text-xs text-[var(--primary)] font-bold hover:underline transition-colors cursor-pointer"
+                >
+                  ⚡ One-Click Local Command Clearance
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="mt-8 text-center text-xs text-[var(--adm-text-muted)] font-medium border-t border-[var(--adm-card-border)] pt-4">
+            Authorized Personnel Only &middot; The Inferno Group LLC &middot; 2
+            CFR &sect; 200 Security
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── MAIN ADMIN INTERFACE ──
+  return (
+    <div
+      id="admin-panel"
+      data-theme={theme}
+      className="h-screen overflow-hidden bg-[var(--adm-bg)] text-[var(--adm-text-secondary)] flex font-[family-name:var(--font-outfit)]"
+    >
+      {/* Hidden File Input for JSON Backup Import */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileImport}
+        accept=".json"
+        className="hidden"
+      />
+
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-[9999] bg-[var(--navy)] text-white border border-[var(--primary)] px-5 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-3 animate-fade-in font-[family-name:var(--font-space-grotesk)] font-semibold">
+          <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] animate-pulse"></span>
+          <span>{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            aria-label="Dismiss notification"
+            className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all ml-2 cursor-pointer active:scale-90"
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* ── SIDEBAR NAVIGATION ── */}
+      {isSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-[2px] lg:hidden"
+        />
+      )}
+      <aside
+        onMouseEnter={() => setIsSidebarHovered(true)}
+        onMouseLeave={() => setIsSidebarHovered(false)}
+        style={{
+          backgroundColor: "var(--adm-sidebar-bg)",
+          color: "var(--adm-sidebar-title)",
+        }}
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen shrink-0 flex-col transition-[width,transform] duration-300 ease-in-out lg:sticky lg:top-0 lg:z-30 lg:translate-x-0 ${
+          isSidebarHovered ? "lg:w-60 shadow-2xl" : "lg:w-[4.5rem] shadow-none"
+        } ${
+          isSidebarOpen
+            ? "translate-x-0 w-[min(18rem,86vw)] shadow-2xl"
+            : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          {/* Brand header - Completely borderless */}
+          <div
+            style={{
+              backgroundColor: "var(--adm-sidebar-header-bg)",
+            }}
+            className="sticky top-0 z-10 flex h-[70px] items-center justify-between px-4 transition-colors"
+          >
+            <Link
+              href="/"
+              className="flex items-center gap-3 overflow-hidden no-underline"
+              title="The Inferno Group - Content Workspace"
+            >
+              <img
+                src="/logo.png"
+                alt="Logo"
+                className={`h-7 w-auto object-contain transition-all shrink-0 ${isDark ? "brightness-0 invert" : ""}`}
+              />
+              <div
+                className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${
+                  isExpanded
+                    ? "opacity-100 max-w-[150px]"
+                    : "opacity-0 max-w-0 lg:hidden"
+                }`}
+              >
+                <div
+                  style={{ color: "var(--adm-sidebar-title)" }}
+                  className="text-xs font-bold font-[family-name:var(--font-space-grotesk)] tracking-wider"
+                >
+                  INFERNO GROUP
+                </div>
+                <div
+                  style={{ color: "var(--adm-sidebar-sub)" }}
+                  className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                >
+                  Content workspace
+                </div>
+              </div>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="Close sidebar navigation"
+              className="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] text-[var(--adm-text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all cursor-pointer active:scale-90"
+            >
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Navigation Items - Pure icons without square boxes or borders */}
+          <div
+            aria-label="CMS sections"
+            className="admin-sidebar-nav space-y-4 px-2.5 py-3"
+          >
+            {[
+              {
+                title: "Operations",
+                items: [
+                  { id: "overview", label: "Overview" },
+                  {
+                    id: "leads",
+                    label: "Leads & inquiries",
+                    badge: leads.filter(
+                      (lead) => (lead.status || "new") === "new",
+                    ).length,
+                  },
+                  { id: "bookings", label: "Bookings & sync" },
+                ],
+              },
+              {
+                title: "Core website",
+                items: [
+                  { id: "hero", label: "Hero & stats" },
+                  { id: "about", label: "About & team" },
+                  { id: "services", label: "Services" },
+                  { id: "contracts", label: "Contracts" },
+                  { id: "partnerships", label: "Partnerships" },
+                ],
+              },
+              {
+                title: "Content & Cadre",
+                items: [
+                  { id: "news", label: "News & bulletins" },
+                  { id: "careers", label: "Careers & cadre" },
+                  { id: "community", label: "Inferno Cares" },
+                ],
+              },
+              {
+                title: "Diagnostics & System",
+                items: [
+                  { id: "quiz", label: "Eligibility quiz" },
+                  { id: "knowledge", label: "FAQs & chatbot" },
+                  { id: "settings", label: "Site & brand settings" },
+                ],
+              },
+            ].map((section) => (
+              <div key={section.title}>
+                <div
+                  style={{ color: "var(--adm-sidebar-section)" }}
+                  className={`mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.18em] transition-all duration-200 whitespace-nowrap overflow-hidden ${
+                    isExpanded
+                      ? "opacity-100 max-h-6"
+                      : "opacity-0 max-h-0 lg:hidden"
+                  }`}
+                >
+                  {section.title}
+                </div>
+                <div className="space-y-1">
+                  {section.items.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        title={tab.label}
+                        aria-label={tab.label}
+                        aria-current={isActive ? "page" : undefined}
+                        onClick={() => {
+                          setActiveTab(tab.id as AdminTab);
+                          setIsSidebarOpen(false);
+                        }}
+                        className={`group relative flex w-full items-center border-0 transition-all duration-200 cursor-pointer ${
+                          isExpanded
+                            ? "justify-between rounded-xl px-3 py-2.5"
+                            : "mx-auto h-10 w-10 justify-center rounded-none border-0 bg-transparent p-0 shadow-none"
+                        } ${
+                          isExpanded
+                            ? isActive
+                              ? "bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white font-bold shadow-md shadow-[var(--primary)]/20"
+                              : isDark
+                                ? "text-slate-400 hover:text-white hover:bg-white/5"
+                                : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/70"
+                            : isActive
+                              ? "text-[var(--primary)]"
+                              : isDark
+                                ? "text-slate-400 hover:text-white"
+                                : "text-slate-500 hover:text-slate-900"
+                        }`}
+                      >
+                        <span className="flex min-w-0 items-center gap-3">
+                          {/* Pure icon without box or borders */}
+                          <span className="relative flex h-6 w-6 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
+                            {getTabIcon(tab.id)}
+                            {!isExpanded &&
+                              tab.badge !== undefined &&
+                              tab.badge > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[var(--primary)] px-0.5 text-[8px] font-bold text-white shadow-xs">
+                                  {tab.badge > 9 ? "9+" : tab.badge}
+                                </span>
+                              )}
+                          </span>
+                          <span
+                            className={`truncate whitespace-nowrap text-xs font-semibold transition-all duration-300 ${
+                              isExpanded
+                                ? "opacity-100 max-w-[140px]"
+                                : "opacity-0 max-w-0 lg:hidden"
+                            }`}
+                          >
+                            {tab.label}
+                          </span>
+                        </span>
+                        {isExpanded &&
+                          tab.badge !== undefined &&
+                          tab.badge > 0 && (
+                            <span
+                              className={`ml-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
+                                isActive
+                                  ? "bg-white text-[var(--primary)] shadow-xs"
+                                  : "bg-[var(--primary)] text-white"
+                              }`}
+                            >
+                              {tab.badge}
+                            </span>
+                          )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* User bar & portal links - Completely borderless */}
+        <div
+          style={{
+            backgroundColor: "var(--adm-sidebar-footer-bg)",
+          }}
+          className={`transition-colors ${isExpanded ? "p-3.5" : "p-2"}`}
+        >
+          {/* Sidebar Quick Theme Toggle - Borderless */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            style={{
+              backgroundColor: isExpanded
+                ? "var(--adm-sidebar-toggle-bg)"
+                : "transparent",
+              color: "var(--adm-sidebar-toggle-text)",
+            }}
+            aria-label={`Switch to ${isDark ? "Light" : "Dark"} mode`}
+            className={`mb-2.5 flex border-0 transition-all cursor-pointer font-[family-name:var(--font-space-grotesk)] ${
+              isExpanded
+                ? "w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-bold"
+                : "mx-auto h-10 w-10 items-center justify-center rounded-none bg-transparent p-0 text-base shadow-none"
+            } ${
+              isExpanded
+                ? isDark
+                  ? "hover:bg-white/10"
+                  : "hover:bg-slate-100"
+                : ""
+            }`}
+            title={`Switch to ${isDark ? "Light" : "Dark"} mode`}
+          >
+            <span className="flex items-center gap-2">
+              <span aria-hidden="true" className="text-base">
+                {isDark ? "☀️" : "🌙"}
+              </span>
+              {isExpanded && <span className="whitespace-nowrap">Theme</span>}
+            </span>
+            {isExpanded && (
+              <span
+                style={{
+                  backgroundColor: "var(--adm-sidebar-badge-bg)",
+                  color: "var(--adm-sidebar-badge-text)",
+                }}
+                className="px-2 py-0.5 rounded-md text-[10px] font-mono uppercase tracking-wider font-bold whitespace-nowrap"
+              >
+                {theme}
+              </span>
+            )}
+          </button>
+
+          {/* User profile avatar & email - Borderless */}
+          <div
+            className={`flex items-center mb-2.5 ${
+              isExpanded ? "gap-2.5" : "justify-center"
+            }`}
+            title={userEmail ?? "Admin"}
+          >
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white font-bold text-xs flex items-center justify-center shrink-0 font-[family-name:var(--font-space-grotesk)] shadow-xs">
+              {userEmail ? userEmail[0].toUpperCase() : "A"}
+            </div>
+            {isExpanded && (
+              <div className="overflow-hidden whitespace-nowrap transition-all duration-300">
+                <div
+                  style={{ color: "var(--adm-sidebar-user-text)" }}
+                  className="text-xs font-bold truncate"
+                >
+                  {userEmail}
+                </div>
+                <div
+                  style={{ color: "var(--adm-sidebar-clearance-text)" }}
+                  className="text-xs font-mono font-semibold"
+                >
+                  Clearance: SuperAdmin
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons (Public Site & Sign Out) - Borderless */}
+          {isExpanded ? (
+            <div className="grid grid-cols-2 gap-2 text-center text-xs font-[family-name:var(--font-space-grotesk)]">
+              <Link
+                href="/"
+                target="_blank"
+                style={{
+                  backgroundColor: "var(--adm-sidebar-link-btn-bg)",
+                  color: "var(--adm-sidebar-link-btn-text)",
+                }}
+                className={`py-1.5 px-2 rounded-lg font-semibold no-underline text-xs transition-colors ${
+                  isDark ? "hover:bg-white/20" : "hover:bg-slate-200"
+                }`}
+              >
+                Public Site ↗
+              </Link>
+              <button
+                onClick={handleSignOut}
+                style={{
+                  backgroundColor: "var(--adm-sidebar-signout-bg)",
+                  color: "var(--adm-sidebar-signout-text)",
+                }}
+                className={`py-1.5 px-2 rounded-lg font-semibold text-xs transition-colors cursor-pointer ${
+                  isDark ? "hover:bg-red-500/25" : "hover:bg-red-100"
+                }`}
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1 items-center">
+              <Link
+                href="/"
+                target="_blank"
+                title="Public Site ↗"
+                style={{
+                  backgroundColor: "var(--adm-sidebar-link-btn-bg)",
+                  color: "var(--adm-sidebar-link-btn-text)",
+                }}
+                className={`h-8 w-8 flex items-center justify-center rounded-lg font-semibold no-underline text-sm transition-colors ${
+                  isDark ? "hover:bg-white/20" : "hover:bg-slate-200"
+                }`}
+              >
+                ↗
+              </Link>
+              <button
+                onClick={handleSignOut}
+                title="Sign Out"
+                style={{
+                  backgroundColor: "var(--adm-sidebar-signout-bg)",
+                  color: "var(--adm-sidebar-signout-text)",
+                }}
+                className={`h-8 w-8 flex items-center justify-center rounded-lg font-semibold text-sm transition-colors cursor-pointer ${
+                  isDark ? "hover:bg-red-500/25" : "hover:bg-red-100"
+                }`}
+              >
+                ⎋
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* ── MAIN CONTENT WORKSPACE ── */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        {/* Brand Accent Strip */}
+        <div className="h-1 bg-gradient-to-r from-[var(--primary)] via-[var(--secondary)] to-[var(--navy)]"></div>
+
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--adm-card-border)] bg-[var(--adm-card)] px-4 py-3 shadow-xs sm:px-6 sm:py-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              aria-label="Open navigation menu"
+              aria-expanded={isSidebarOpen}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--adm-card-border)] text-[var(--adm-text-primary)] hover:bg-[var(--adm-card-subtle)] cursor-pointer lg:hidden"
+            >
+              ☰
+            </button>
+            <div>
+              <h1 className="text-lg font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] capitalize">
+                {activeTab === "overview" && "Executive Command Center"}
+                {activeTab === "leads" &&
+                  "Inbound Transmissions & CRM Pipeline"}
+                {activeTab === "bookings" &&
+                  "Consultation Schedules & Availability"}
+                {activeTab === "hero" && "Hero Banner, Stats & AI Innovation"}
+                {activeTab === "about" &&
+                  "About Us, Core Values & Leadership Team"}
+                {activeTab === "services" &&
+                  "Core Capabilities & Services Directory"}
+                {activeTab === "contracts" &&
+                  "Federal Solicitations & Capabilities"}
+                {activeTab === "partnerships" &&
+                  "Teaming & Subcontractor Opportunities"}
+                {activeTab === "news" && "News, Solicitations & Press Articles"}
+                {activeTab === "careers" && "Cadre Hiring & Job Openings"}
+                {activeTab === "community" &&
+                  "Inferno Cares & Client Testimonials"}
+                {activeTab === "quiz" &&
+                  "B2G Socioeconomic Eligibility Quiz CMS"}
+                {activeTab === "knowledge" &&
+                  "FAQ Base, Resources Library & Chatbot Q&A"}
+                {activeTab === "settings" &&
+                  "Global Corporate Identity & Emergency Alerts"}
+              </h1>
+              <div className="text-xs text-[var(--adm-text-muted)] font-semibold">
+                The Inferno Group LLC &bull; Booking updates live &bull; Leads
+                sync across tabs
+              </div>
+            </div>
+          </div>
+
+          {/* Quick System Tools & Theme Toggle */}
+          <div className="flex items-center gap-2 font-[family-name:var(--font-space-grotesk)]">
+            {/* Live Page Jump Links */}
+            {activeTab === "hero" && (
+              <Link
+                href="/"
+                target="_blank"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--adm-text-primary)] transition-colors"
+              >
+                <span>View Home ↗</span>
+              </Link>
+            )}
+            {activeTab === "about" && (
+              <Link
+                href="/about"
+                target="_blank"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--adm-text-primary)] transition-colors"
+              >
+                <span>View About ↗</span>
+              </Link>
+            )}
+            {activeTab === "services" && (
+              <Link
+                href="/services"
+                target="_blank"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--adm-text-primary)] transition-colors"
+              >
+                <span>View Services ↗</span>
+              </Link>
+            )}
+            {activeTab === "contracts" && (
+              <Link
+                href="/contracts"
+                target="_blank"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--adm-text-primary)] transition-colors"
+              >
+                <span>View Contracts ↗</span>
+              </Link>
+            )}
+            {activeTab === "partnerships" && (
+              <Link
+                href="/partnerships"
+                target="_blank"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--adm-text-primary)] transition-colors"
+              >
+                <span>View Partnerships ↗</span>
+              </Link>
+            )}
+            {activeTab === "news" && (
+              <Link
+                href="/news"
+                target="_blank"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--adm-text-primary)] transition-colors"
+              >
+                <span>View News ↗</span>
+              </Link>
+            )}
+            {activeTab === "careers" && (
+              <Link
+                href="/careers"
+                target="_blank"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--adm-text-primary)] transition-colors"
+              >
+                <span>View Careers ↗</span>
+              </Link>
+            )}
+            {activeTab === "quiz" && (
+              <Link
+                href="/quiz"
+                target="_blank"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--adm-text-primary)] transition-colors"
+              >
+                <span>View Quiz ↗</span>
+              </Link>
+            )}
+            {activeTab === "knowledge" && (
+              <Link
+                href="/faq"
+                target="_blank"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--adm-text-primary)] transition-colors"
+              >
+                <span>View FAQs ↗</span>
+              </Link>
+            )}
+            {activeTab === "bookings" && (
+              <Link
+                href="/calendar"
+                target="_blank"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--adm-text-primary)] transition-colors"
+              >
+                <span>View Calendar ↗</span>
+              </Link>
+            )}
+
+            <button
+              onClick={handleExportFullJSON}
+              title="Export complete CMS backup"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card)] hover:border-[var(--primary)] hover:text-[var(--primary)] text-xs font-bold text-[var(--adm-text-primary)] transition-colors cursor-pointer"
+            >
+              <span>Export JSON</span>
+            </button>
+            <button
+              onClick={handleImportJSONClick}
+              title="Import CMS backup from file"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[var(--adm-card-border)] bg-[var(--adm-card)] hover:border-[var(--primary)] hover:text-[var(--primary)] text-xs font-bold text-[var(--adm-text-primary)] transition-colors cursor-pointer"
+            >
+              <span>Import JSON</span>
+            </button>
+            <button
+              onClick={handleResetToFactoryDefaults}
+              title="Reset all content to factory seed defaults"
+              className="px-3.5 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-600 transition-colors cursor-pointer"
+            >
+              Factory Reset
+            </button>
+          </div>
+        </header>
+
+        {/* Main Tab Panels */}
+        <main className="p-6 max-w-7xl w-full mx-auto space-y-6">
+          {/* ════════════════════════════════════════════════════════════════
+              1. OVERVIEW TAB
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "overview" && (
+            <div className="space-y-6 animate-fade-in">
+              <section className="relative overflow-hidden rounded-[26px] bg-[#0d1b3d] px-6 py-7 text-white shadow-xl shadow-slate-900/10 sm:px-8 sm:py-9">
+                <div className="pointer-events-none absolute -right-12 -top-28 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(225,77,24,0.3),transparent_68%)]" />
+                <div className="pointer-events-none absolute bottom-[-150px] right-1/3 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(26,86,196,0.3),transparent_68%)]" />
+                <div className="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-orange-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                      Operations overview
+                    </div>
+                    <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                      Good{" "}
+                      {new Date().getHours() < 12
+                        ? "morning"
+                        : new Date().getHours() < 17
+                          ? "afternoon"
+                          : "evening"}
+                      {userEmail ? `, ${userEmail.split("@")[0]}` : ""}.
+                    </h2>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
+                      Your content, inquiries, and consultation activity at a
+                      glance. Updates are timestamped so your team knows what is
+                      current.
+                    </p>
+                    <div className="mt-5 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white">
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            bookingRealtimeStatus === "live"
+                              ? "animate-pulse bg-emerald-400"
+                              : "bg-amber-300"
+                          }`}
+                        />
+                        {bookingRealtimeStatus === "live"
+                          ? "Bookings live"
+                          : "Bookings refresh every 30 sec"}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {lastUpdated
+                          ? `Updated ${lastUpdated.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}`
+                          : "Waiting for first data refresh"}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-[11px] text-slate-400">
+                      CMS content syncs across open tabs; lead submissions are
+                      stored in this browser.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDashboardRefresh}
+                      disabled={isRefreshing}
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/15 disabled:cursor-wait disabled:opacity-60"
+                    >
+                      <svg
+                        className={isRefreshing ? "animate-spin" : ""}
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <path d="M20 7v5h-5M4 17v-5h5" />
+                        <path d="M5.6 9a7 7 0 0 1 11.55-2.6L20 12M4 12l2.85 5.6A7 7 0 0 0 18.4 15" />
+                      </svg>
+                      {isRefreshing ? "Refreshing…" : "Refresh data"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("leads")}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-orange-950/20 transition hover:bg-[#c94113]"
+                    >
+                      Review inquiries <span aria-hidden="true">→</span>
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {bookingLoadError && (
+                <div
+                  role="alert"
+                  className="flex flex-col gap-1 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <span>
+                    <strong>Bookings could not be refreshed.</strong>{" "}
+                    {bookingLoadError}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void fetchSupabaseBookings()}
+                    className="shrink-0 font-bold underline underline-offset-2"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  {
+                    label: "Total inquiries",
+                    value: leads.length,
+                    detail: `${leads.filter((lead) => (lead.status || "new") === "new").length} need review`,
+                    color: "#e14d18",
+                    icon: "↗",
+                  },
+                  {
+                    label: "Consultations",
+                    value: combinedBookings.length,
+                    detail: `${dbBookings.length} from connected booking database`,
+                    color: "#1a56c4",
+                    icon: "◷",
+                  },
+                  {
+                    label: "Published services",
+                    value: services.filter(
+                      (service) => service.status === "published",
+                    ).length,
+                    detail: "Visible on the public site",
+                    color: "#0f766e",
+                    icon: "▤",
+                  },
+                  {
+                    label: "Published content",
+                    value:
+                      articles.filter(
+                        (article) => article.status === "published",
+                      ).length +
+                      jobs.filter((job) => job.status === "published").length,
+                    detail: "News articles and open roles",
+                    color: "#7253c7",
+                    icon: "✳",
+                  },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="group rounded-2xl border border-[var(--adm-card-border)] bg-[var(--adm-card)] p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="text-xs font-semibold text-[var(--adm-text-muted)]">
+                        {stat.label}
+                      </div>
+                      <span
+                        className="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold"
+                        style={{
+                          color: stat.color,
+                          backgroundColor: `${stat.color}12`,
+                        }}
+                      >
+                        {stat.icon}
+                      </span>
+                    </div>
+                    <div className="mt-4 flex items-end justify-between gap-2">
+                      <div className="text-3xl font-bold tracking-tight text-[var(--adm-text-primary)]">
+                        {stat.value}
+                      </div>
+                      <span className="mb-1 h-1.5 w-12 rounded-full bg-[var(--adm-card-subtle)]">
+                        <span
+                          className="block h-full rounded-full"
+                          style={{
+                            backgroundColor: stat.color,
+                            width: `${Math.min(100, Math.max(18, stat.value * 8))}%`,
+                          }}
+                        />
+                      </span>
+                    </div>
+                    <div className="mt-1.5 text-xs text-[var(--adm-text-muted)]">
+                      {stat.detail}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_1fr]">
+                <section className="rounded-2xl border border-[var(--adm-card-border)] bg-[var(--adm-card)] p-5 shadow-sm sm:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-sm font-bold text-[var(--adm-text-primary)]">
+                        Inquiry activity
+                      </h3>
+                      <p className="mt-1 text-xs text-[var(--adm-text-muted)]">
+                        New submissions over the last seven days
+                      </p>
+                    </div>
+                    <span className="rounded-lg bg-orange-500/10 px-2.5 py-1.5 text-xs font-bold text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                      {leadActivityByDay.reduce(
+                        (total, day) => total + day.count,
+                        0,
+                      )}{" "}
+                      last 7 days
+                    </span>
+                  </div>
+                  <div className="mt-7 flex h-44 items-end justify-between gap-3 border-b border-[var(--adm-card-border)] px-1">
+                    {leadActivityByDay.map((day) => {
+                      const maxCount = Math.max(
+                        1,
+                        ...leadActivityByDay.map((item) => item.count),
+                      );
+                      const height = Math.max(8, (day.count / maxCount) * 100);
+                      return (
+                        <div
+                          key={day.label}
+                          className="flex h-full flex-1 flex-col items-center justify-end gap-2"
+                        >
+                          <span className="text-[11px] font-semibold text-[var(--adm-text-muted)]">
+                            {day.count || ""}
+                          </span>
+                          <div className="flex h-[76%] w-full items-end justify-center">
+                            <div
+                              className={`w-full max-w-10 rounded-t-lg transition-all ${
+                                day.count
+                                  ? "bg-gradient-to-t from-[#1a56c4] to-[#6d9cf0]"
+                                  : "bg-[var(--adm-card-subtle)]"
+                              }`}
+                              style={{ height: `${height}%` }}
+                              title={`${day.count} inquiries`}
+                            />
+                          </div>
+                          <span className="pb-2 text-[11px] font-medium text-[var(--adm-text-muted)]">
+                            {day.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-[11px] text-[var(--adm-text-muted)]">
+                    <span>Activity based on browser-stored lead records</span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("leads")}
+                      className="font-bold text-[var(--secondary)] hover:underline"
+                    >
+                      Open CRM →
+                    </button>
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-[var(--adm-card-border)] bg-[var(--adm-card)] p-5 shadow-sm sm:p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-[var(--adm-text-primary)]">
+                        Workspace health
+                      </h3>
+                      <p className="mt-1 text-xs text-[var(--adm-text-muted)]">
+                        Content and data connections
+                      </p>
+                    </div>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                        bookingRealtimeStatus === "live"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {bookingRealtimeStatus === "live"
+                        ? "Connected"
+                        : bookingRealtimeStatus === "polling"
+                          ? "Polling"
+                          : "Connecting"}
+                    </span>
+                  </div>
+                  <div className="mt-5 space-y-4">
+                    {[
+                      {
+                        label: "Booking database",
+                        detail:
+                          bookingRealtimeStatus === "live"
+                            ? "Realtime subscription active"
+                            : "Automatic refresh every 30 seconds",
+                        okay: !bookingLoadError,
+                      },
+                      {
+                        label: "Public services",
+                        detail: `${services.filter((service) => service.status === "published").length} published`,
+                        okay: true,
+                      },
+                      {
+                        label: "News & insights",
+                        detail: `${articles.filter((article) => article.status === "published").length} published`,
+                        okay: true,
+                      },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-start gap-3">
+                        <span
+                          className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                            item.okay ? "bg-emerald-500" : "bg-amber-500"
+                          }`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-semibold text-[var(--adm-text-primary)]">
+                            {item.label}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-[var(--adm-text-muted)]">
+                            {item.detail}
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-semibold text-[var(--adm-text-muted)]">
+                          {item.okay ? "Ready" : "Issue"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 border-t border-[var(--adm-card-border)] pt-4">
+                    <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--adm-text-muted)]">
+                      Quick access
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: "Edit services", tab: "services" as AdminTab },
+                        { label: "Manage news", tab: "news" as AdminTab },
+                        { label: "View bookings", tab: "bookings" as AdminTab },
+                        { label: "Update homepage", tab: "hero" as AdminTab },
+                      ].map((item) => (
+                        <button
+                          key={item.tab}
+                          type="button"
+                          onClick={() => setActiveTab(item.tab)}
+                          className="rounded-lg border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] px-3 py-2 text-left text-[11px] font-semibold text-[var(--adm-text-primary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                        >
+                          {item.label}
+                          <span className="float-right" aria-hidden="true">
+                            ↗
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <section className="rounded-2xl border border-[var(--adm-card-border)] bg-[var(--adm-card)] p-5 shadow-sm sm:p-6">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--adm-text-primary)]">
+                      Recent inquiries
+                    </h3>
+                    <p className="mt-1 text-xs text-[var(--adm-text-muted)]">
+                      Latest activity from your public-site forms
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("leads")}
+                    className="rounded-lg border border-[var(--adm-card-border)] px-3 py-2 text-xs font-bold text-[var(--adm-text-primary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                  >
+                    View all inquiries <span aria-hidden="true">→</span>
+                  </button>
+                </div>
+                {recentLeads.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] px-4 py-10 text-center">
+                    <div className="text-sm font-semibold text-[var(--adm-text-primary)]">
+                      No inquiries yet
+                    </div>
+                    <p className="mt-1 text-xs text-[var(--adm-text-muted)]">
+                      New public-site form submissions will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[680px] text-left text-xs">
+                      <thead className="border-b border-[var(--adm-card-border)] text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--adm-text-muted)]">
+                        <tr>
+                          <th className="pb-3 pr-4">Inquiry</th>
+                          <th className="pb-3 px-4">Channel</th>
+                          <th className="pb-3 px-4">Received</th>
+                          <th className="pb-3 px-4">Status</th>
+                          <th className="pb-3 pl-4 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--border)]">
+                        {recentLeads.map((lead) => (
+                          <tr key={lead.id} className="group">
+                            <td className="py-3.5 pr-4">
+                              <div className="font-semibold text-[var(--adm-text-primary)]">
+                                {lead.name || lead.contactName || "Anonymous"}
+                              </div>
+                              <div className="mt-0.5 text-[11px] text-[var(--adm-text-muted)]">
+                                {lead.company ||
+                                  lead.partnerCompany ||
+                                  lead.org ||
+                                  lead.email ||
+                                  lead.contactEmail ||
+                                  "General inquiry"}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-orange-700">
+                                {lead.type.replaceAll("_", " ")}
+                              </span>
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3.5 text-[var(--adm-text-muted)]">
+                              {new Date(lead.createdAt).toLocaleDateString(
+                                undefined,
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              )}
+                              <span className="ml-1.5 text-[10px]">
+                                {new Date(lead.createdAt).toLocaleTimeString(
+                                  [],
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-[10px] font-bold capitalize ${
+                                  (lead.status || "new") === "new"
+                                    ? "bg-red-50 text-red-700"
+                                    : (lead.status || "new") === "reviewed"
+                                      ? "bg-blue-50 text-blue-700"
+                                      : (lead.status || "new") === "contacted"
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : "bg-slate-100 text-slate-600"
+                                }`}
+                              >
+                                {lead.status || "new"}
+                              </span>
+                            </td>
+                            <td className="py-3.5 pl-4 text-right">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedLead(lead);
+                                  setActiveTab("leads");
+                                }}
+                                className="font-bold text-[var(--secondary)] hover:underline"
+                              >
+                                Inspect
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              2. LEADS CRM TAB
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "leads" && (
+            <div className="space-y-5 animate-fade-in">
+              {/* Controls & Filter Bar */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-4 shadow-xs flex flex-wrap gap-3 items-center justify-between">
+                <div className="flex flex-wrap gap-3 flex-1 min-w-[280px]">
+                  {/* Search */}
+                  <input
+                    type="text"
+                    value={leadSearch}
+                    onChange={(e) => setLeadSearch(e.target.value)}
+                    placeholder="Search by name, email, company, job..."
+                    className="bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl px-3 py-2 text-xs flex-1 min-w-[200px] outline-none focus:bg-[var(--adm-card)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 text-[var(--adm-text-primary)]"
+                  />
+                  {/* Type Filter */}
+                  <select
+                    value={leadTypeFilter}
+                    onChange={(e) => setLeadTypeFilter(e.target.value)}
+                    className="bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl px-3 py-2 text-xs outline-none focus:bg-[var(--adm-card)] focus:border-[var(--primary)] text-[var(--adm-text-primary)] font-medium"
+                  >
+                    <option value="ALL">All Channels</option>
+                    <option value="CONTACT">Contact Desk (CONTACT)</option>
+                    <option value="APPLICATION">
+                      Job Resumes (APPLICATION)
+                    </option>
+                    <option value="PARTNER">
+                      Subcontractor Teaming (PARTNER)
+                    </option>
+                    <option value="CONTRACT_REVIEW">
+                      Solicitation Teaming (CONTRACT_REVIEW)
+                    </option>
+                    <option value="QUIZ">SBA Assessment (QUIZ)</option>
+                    <option value="BOOKING">
+                      Consultation Bookings (BOOKING)
+                    </option>
+                    <option value="DOWNLOAD">
+                      Capability Statement (DOWNLOAD)
+                    </option>
+                    <option value="RESOURCE_DOWNLOAD">
+                      Resources Library (RESOURCE_DOWNLOAD)
+                    </option>
+                  </select>
+                  {/* Status Filter */}
+                  <select
+                    value={leadStatusFilter}
+                    onChange={(e) => setLeadStatusFilter(e.target.value)}
+                    className="bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl px-3 py-2 text-xs outline-none focus:bg-[var(--adm-card)] focus:border-[var(--primary)] text-[var(--adm-text-primary)] font-medium"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="new">New (Unreviewed)</option>
+                    <option value="reviewed">In Review</option>
+                    <option value="contacted">Contacted / Dispatched</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={exportLeadsCSV}
+                  className="px-4 py-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white font-semibold text-xs rounded-xl flex items-center gap-2 cursor-pointer shadow-md shadow-[var(--primary)]/20 transition-all font-[family-name:var(--font-space-grotesk)]"
+                >
+                  <span>Export to CSV ({filteredLeads.length})</span>
+                </button>
+              </div>
+
+              {/* Leads Table */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl shadow-xs overflow-hidden">
+                {filteredLeads.length === 0 ? (
+                  <div className="p-12 text-center text-[var(--adm-text-muted)] text-sm">
+                    No leads match your filter criteria.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-[var(--adm-text-primary)]">
+                      <thead className="bg-[var(--adm-card-subtle)] border-b border-[var(--adm-card-border)] text-[var(--adm-text-muted)] uppercase text-xs font-bold tracking-wider font-[family-name:var(--font-space-grotesk)]">
+                        <tr>
+                          <th className="py-3 px-4">Date &amp; ID</th>
+                          <th className="py-3 px-4">Channel</th>
+                          <th className="py-3 px-4">Lead / Candidate</th>
+                          <th className="py-3 px-4">Company / Target</th>
+                          <th className="py-3 px-4">Contact Coordinate</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--border)]">
+                        {filteredLeads.map((lead) => (
+                          <tr
+                            key={lead.id}
+                            className="hover:bg-[var(--adm-card-subtle)]/80 transition-colors"
+                          >
+                            <td className="py-3.5 px-4 font-mono text-xs font-semibold text-[var(--adm-text-muted)] whitespace-nowrap">
+                              {new Date(lead.createdAt).toLocaleDateString()}
+                              <div className="text-xs text-[var(--adm-text-muted)] font-medium">
+                                {new Date(lead.createdAt).toLocaleTimeString(
+                                  [],
+                                  { hour: "2-digit", minute: "2-digit" },
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-[rgba(225,77,24,0.08)] text-[var(--primary)] border border-[rgba(225,77,24,0.2)]">
+                                {lead.type}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="font-bold text-[var(--adm-text-primary)]">
+                                {lead.name || lead.contactName || "Anonymous"}
+                              </div>
+                              {lead.resumeName && (
+                                <div className="text-xs text-[var(--secondary)] font-semibold mt-0.5">
+                                  📎 {lead.resumeName}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-[var(--adm-text-muted)] font-semibold">
+                              {lead.company ||
+                                lead.partnerCompany ||
+                                lead.org ||
+                                lead.jobTitle ||
+                                lead.solicitation ||
+                                lead.resourceTitle ||
+                                "—"}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="text-[var(--adm-text-primary)] font-semibold">
+                                {lead.email || lead.contactEmail || "—"}
+                              </div>
+                              {lead.phone && (
+                                <div className="text-xs text-[var(--adm-text-muted)] font-medium mt-0.5">
+                                  {lead.phone}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <select
+                                value={lead.status || "new"}
+                                onChange={(e) =>
+                                  updateLeadStatus(
+                                    lead.id,
+                                    e.target.value as any,
+                                  )
+                                }
+                                className={`text-xs font-bold uppercase rounded-lg px-2.5 py-1 outline-none border cursor-pointer font-[family-name:var(--font-space-grotesk)] ${
+                                  (lead.status || "new") === "new"
+                                    ? "bg-red-50 text-red-600 border-red-200"
+                                    : (lead.status || "new") === "reviewed"
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : (lead.status || "new") === "contacted"
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                        : "bg-gray-50 text-gray-600 border-gray-200"
+                                }`}
+                              >
+                                <option value="new">NEW</option>
+                                <option value="reviewed">REVIEWED</option>
+                                <option value="contacted">CONTACTED</option>
+                                <option value="archived">ARCHIVED</option>
+                              </select>
+                            </td>
+                            <td className="py-3.5 px-4 text-right space-x-2 whitespace-nowrap">
+                              <AdminViewButton
+                                onClick={() => setSelectedLead(lead)}
+                                title="View Transmission Details"
+                              />
+                              <AdminDeleteButton
+                                onClick={() => deleteLead(lead.id)}
+                                title="Delete Transmission"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Lead Detail Modal / Inspector */}
+              {selectedLead && (
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+                  <div className="bg-[var(--adm-card)] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5 animate-scale-up border border-[var(--adm-card-border)]">
+                    <div className="flex justify-between items-start border-b border-[var(--adm-card-border)] pb-4">
+                      <div>
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-[rgba(225,77,24,0.08)] text-[var(--primary)] border border-[rgba(225,77,24,0.2)] inline-block mb-1">
+                          {selectedLead.type} TRANSMISSION
+                        </span>
+                        <h2 className="text-lg font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+                          {selectedLead.name ||
+                            selectedLead.contactName ||
+                            "Submission Details"}
+                        </h2>
+                        <div className="text-xs text-[var(--adm-text-muted)] font-mono">
+                          Received:{" "}
+                          {new Date(selectedLead.createdAt).toLocaleString()}{" "}
+                          &bull; ID: {selectedLead.id}
+                        </div>
+                      </div>
+                      <AdminModalCloseButton
+                        onClick={() => setSelectedLead(null)}
+                        title="Close details dialog"
+                      />
+                    </div>
+
+                    {/* Meta Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs bg-[var(--adm-card-subtle)] p-4 rounded-xl border border-[var(--adm-card-border)]">
+                      <div>
+                        <span className="text-[var(--adm-text-muted)] block">
+                          Email
+                        </span>
+                        <a
+                          href={`mailto:${selectedLead.email || selectedLead.contactEmail}`}
+                          className="font-semibold text-[var(--primary)] hover:underline break-all"
+                        >
+                          {selectedLead.email ||
+                            selectedLead.contactEmail ||
+                            "N/A"}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="text-[var(--adm-text-muted)] block">
+                          Phone
+                        </span>
+                        <span className="font-semibold text-[var(--adm-text-primary)]">
+                          {selectedLead.phone || "N/A"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--adm-text-muted)] block">
+                          Organization
+                        </span>
+                        <span className="font-semibold text-[var(--adm-text-primary)]">
+                          {selectedLead.company ||
+                            selectedLead.partnerCompany ||
+                            selectedLead.org ||
+                            "N/A"}
+                        </span>
+                      </div>
+                      {selectedLead.jobTitle && (
+                        <div>
+                          <span className="text-[var(--adm-text-muted)] block">
+                            Job Role
+                          </span>
+                          <span className="font-semibold text-[var(--adm-text-primary)]">
+                            {selectedLead.jobTitle}
+                          </span>
+                        </div>
+                      )}
+                      {selectedLead.solicitation && (
+                        <div>
+                          <span className="text-[var(--adm-text-muted)] block">
+                            Solicitation
+                          </span>
+                          <span className="font-semibold text-[var(--adm-text-primary)]">
+                            {selectedLead.solicitation}
+                          </span>
+                        </div>
+                      )}
+                      {selectedLead.uei && (
+                        <div>
+                          <span className="text-[var(--adm-text-muted)] block">
+                            Partner UEI
+                          </span>
+                          <span className="font-mono font-semibold text-[var(--adm-text-primary)]">
+                            {selectedLead.uei}
+                          </span>
+                        </div>
+                      )}
+                      {selectedLead.bondingCapacity && (
+                        <div>
+                          <span className="text-[var(--adm-text-muted)] block">
+                            Bonding
+                          </span>
+                          <span className="font-semibold text-[var(--adm-text-primary)]">
+                            {selectedLead.bondingCapacity}
+                          </span>
+                        </div>
+                      )}
+                      {selectedLead.consultType && (
+                        <div>
+                          <span className="text-[var(--adm-text-muted)] block">
+                            Consultation Scope
+                          </span>
+                          <span className="font-semibold text-[var(--adm-text-primary)] uppercase">
+                            {selectedLead.consultType}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Specific details */}
+                    {selectedLead.cover && (
+                      <div>
+                        <h4 className="text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider mb-1.5 font-[family-name:var(--font-space-grotesk)]">
+                          Cover Statement / Background
+                        </h4>
+                        <div className="bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl p-3 text-xs text-[var(--adm-text-primary)] whitespace-pre-line leading-relaxed">
+                          {selectedLead.cover}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedLead.message && (
+                      <div>
+                        <h4 className="text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider mb-1.5 font-[family-name:var(--font-space-grotesk)]">
+                          Inquiry Message
+                        </h4>
+                        <div className="bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl p-3 text-xs text-[var(--adm-text-primary)] whitespace-pre-line leading-relaxed">
+                          {selectedLead.message}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedLead.reviewNotes && (
+                      <div>
+                        <h4 className="text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider mb-1.5 font-[family-name:var(--font-space-grotesk)]">
+                          Teaming &amp; Capability Notes
+                        </h4>
+                        <div className="bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl p-3 text-xs text-[var(--adm-text-primary)] whitespace-pre-line leading-relaxed">
+                          {selectedLead.reviewNotes}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedLead.recommendations && (
+                      <div>
+                        <h4 className="text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider mb-1.5 font-[family-name:var(--font-space-grotesk)]">
+                          SBA Certification Eligibility Results
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedLead.recommendations.map((rec, rIdx) => (
+                            <span
+                              key={rIdx}
+                              className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-xs font-semibold"
+                            >
+                              ✓ {rec}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Resume Download Action */}
+                    {(selectedLead.resumeName ||
+                      selectedLead.type === "APPLICATION") && (
+                      <div className="p-3 bg-[rgba(26,86,196,0.06)] border border-[rgba(26,86,196,0.2)] rounded-xl flex items-center justify-between">
+                        <div className="text-xs text-[var(--adm-text-primary)] font-medium">
+                          Candidate Resume:{" "}
+                          <strong>
+                            {selectedLead.resumeName || "Uploaded Document"}
+                          </strong>
+                        </div>
+                        <button
+                          onClick={() => handleDownloadResume(selectedLead)}
+                          className="px-3 py-1.5 bg-[var(--secondary)] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer font-[family-name:var(--font-space-grotesk)] shadow-xs"
+                        >
+                          Download Resume ↓
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Admin Notes Field */}
+                    <div>
+                      <h4 className="text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider mb-1.5 font-[family-name:var(--font-space-grotesk)]">
+                        Internal Admin Notes &amp; Follow-up Log
+                      </h4>
+                      <textarea
+                        defaultValue={selectedLead.adminNotes || ""}
+                        onBlur={(e) =>
+                          saveLeadAdminNotes(selectedLead.id, e.target.value)
+                        }
+                        placeholder="Add internal notes, phone call logs, or assigned team members..."
+                        className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl p-3 text-xs outline-none focus:bg-[var(--adm-card)] focus:border-[var(--primary)] min-h-[80px]"
+                      ></textarea>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-3 border-t border-[var(--adm-card-border)]">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[var(--adm-text-muted)] font-medium">
+                          Status:
+                        </span>
+                        <select
+                          value={selectedLead.status || "new"}
+                          onChange={(e) =>
+                            updateLeadStatus(
+                              selectedLead.id,
+                              e.target.value as any,
+                            )
+                          }
+                          className="text-xs font-bold rounded-lg border border-[var(--adm-card-border)] px-2.5 py-1 text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]"
+                        >
+                          <option value="new">NEW</option>
+                          <option value="reviewed">REVIEWED</option>
+                          <option value="contacted">CONTACTED</option>
+                          <option value="archived">ARCHIVED</option>
+                        </select>
+                      </div>
+
+                      <button
+                        onClick={() => setSelectedLead(null)}
+                        className="px-4 py-2 bg-[var(--navy)] text-white rounded-xl text-xs font-semibold hover:opacity-90 cursor-pointer font-[family-name:var(--font-space-grotesk)]"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              3. BOOKINGS TAB
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "bookings" && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Calendar Diagnostics Banner */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+                    External Calendar Synchronization
+                  </h3>
+                  <p className="text-xs text-[var(--adm-text-muted)] mt-1 max-w-xl">
+                    Sync consultation availability with Google Calendar and
+                    Microsoft Graph Outlook APIs. Busy windows are subtracted
+                    from available slots in real time.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 font-[family-name:var(--font-space-grotesk)]">
+                  <button
+                    onClick={handleInspectSlots}
+                    disabled={isLoadingSlots}
+                    className="px-3.5 py-2 bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] border border-[var(--adm-card-border)] text-[var(--adm-text-primary)] font-semibold rounded-xl text-xs transition-colors cursor-pointer"
+                  >
+                    {isLoadingSlots ? "Querying..." : "Inspect Live Slots"}
+                  </button>
+                  <button
+                    onClick={handleTriggerCalendarSync}
+                    disabled={isSyncingCalendar}
+                    className="px-4 py-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white font-semibold rounded-xl text-xs transition-colors cursor-pointer flex items-center gap-2 shadow-md shadow-[var(--primary)]/20"
+                  >
+                    {isSyncingCalendar
+                      ? "Syncing..."
+                      : "Sync Calendars Real-Time ↻"}
+                  </button>
+                </div>
+              </div>
+
+              {syncResult && (
+                <div className="p-4 bg-[rgba(26,86,196,0.06)] border border-[rgba(26,86,196,0.2)] text-[var(--adm-text-primary)] rounded-2xl text-xs font-mono">
+                  {syncResult}
+                </div>
+              )}
+
+              {activeSlotsCount !== null && (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl text-xs">
+                  ✓ Active consultation slots available for booking:{" "}
+                  <strong>{activeSlotsCount} slots</strong>.
+                </div>
+              )}
+
+              {/* Booked Consultations List */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl shadow-xs p-6">
+                <h3 className="text-sm font-bold text-[var(--adm-text-primary)] mb-4 font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                  Scheduled Consultations ({combinedBookings.length})
+                </h3>
+
+                {combinedBookings.length === 0 ? (
+                  <div className="py-12 text-center text-[var(--adm-text-muted)] text-xs">
+                    No consultations scheduled yet. Book a session on the
+                    `/calendar` portal to see live records here.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-[var(--adm-text-primary)]">
+                      <thead className="bg-[var(--adm-card-subtle)] border-b border-[var(--adm-card-border)] text-[var(--adm-text-muted)] uppercase text-xs font-bold tracking-wider font-[family-name:var(--font-space-grotesk)]">
+                        <tr>
+                          <th className="py-3 px-4">Client Name</th>
+                          <th className="py-3 px-4">Organization</th>
+                          <th className="py-3 px-4">Scope</th>
+                          <th className="py-3 px-4">Scheduled Slot</th>
+                          <th className="py-3 px-4">Timezone</th>
+                          <th className="py-3 px-4">Source</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--border)]">
+                        {combinedBookings.map((b, idx) => (
+                          <tr
+                            key={idx}
+                            className="hover:bg-[var(--adm-card-subtle)]/80 transition-colors"
+                          >
+                            <td className="py-3 px-4 font-bold text-[var(--adm-text-primary)]">
+                              {b.full_name}
+                              <div className="text-xs text-[var(--adm-text-muted)] font-medium">
+                                {b.email}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-[var(--adm-text-muted)] font-semibold">
+                              {b.company}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-[rgba(225,77,24,0.08)] text-[var(--primary)] border border-[rgba(225,77,24,0.2)]">
+                                {b.meeting_type}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 font-bold text-[var(--adm-text-primary)]">
+                              {b.slot_date} &bull; {b.slot_time}
+                            </td>
+                            <td className="py-3 px-4 font-mono text-xs font-semibold text-[var(--adm-text-muted)]">
+                              {b.timezone}
+                            </td>
+                            <td className="py-3 px-4 text-[var(--adm-text-muted)] text-xs font-medium">
+                              {b.source}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              4. HERO BANNER, STATS & AI INNOVATION
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "hero" && hero && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Hero Banner Form */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                  Homepage Hero Banner Configuration
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Eyebrow Headline
+                    </label>
+                    <input
+                      type="text"
+                      value={hero.eyebrow}
+                      onChange={(e) =>
+                        setHero({ ...hero, eyebrow: e.target.value })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl px-3 py-2 text-xs outline-none"
+                    />
+                  </div>
+                  <ImageDropzone
+                    label="Fallback Background Image"
+                    value={hero.fallbackImage}
+                    onChange={(val) => setHero({ ...hero, fallbackImage: val })}
+                    aspectRatio="wide"
+                  />
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Main Headline
+                    </label>
+                    <input
+                      type="text"
+                      value={hero.headlineMain}
+                      onChange={(e) =>
+                        setHero({ ...hero, headlineMain: e.target.value })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl px-3 py-2 text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Gradient Accent Headline
+                    </label>
+                    <input
+                      type="text"
+                      value={hero.headlineGradient}
+                      onChange={(e) =>
+                        setHero({ ...hero, headlineGradient: e.target.value })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl px-3 py-2 text-xs outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Subheadline Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={hero.subheadline}
+                    onChange={(e) =>
+                      setHero({ ...hero, subheadline: e.target.value })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl px-3 py-2 text-xs outline-none"
+                  ></textarea>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      CTA 1 Label
+                    </label>
+                    <input
+                      type="text"
+                      value={hero.ctaText1}
+                      onChange={(e) =>
+                        setHero({ ...hero, ctaText1: e.target.value })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl px-3 py-2 text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      CTA 1 Link
+                    </label>
+                    <input
+                      type="text"
+                      value={hero.ctaLink1}
+                      onChange={(e) =>
+                        setHero({ ...hero, ctaLink1: e.target.value })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl px-3 py-2 text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      CTA 2 Label
+                    </label>
+                    <input
+                      type="text"
+                      value={hero.ctaText2}
+                      onChange={(e) =>
+                        setHero({ ...hero, ctaText2: e.target.value })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl px-3 py-2 text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      CTA 2 Link
+                    </label>
+                    <input
+                      type="text"
+                      value={hero.ctaLink2}
+                      onChange={(e) =>
+                        setHero({ ...hero, ctaLink2: e.target.value })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl px-3 py-2 text-xs outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <button
+                    onClick={() => {
+                      dataStore.saveHero(hero);
+                      showToast("Hero banner updated & synced to Supabase.");
+                    }}
+                    className="px-5 py-2.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white font-semibold rounded-xl text-xs cursor-pointer shadow-md shadow-[var(--primary)]/20 font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    Save Hero Settings
+                  </button>
+                </div>
+              </div>
+
+              {/* Stats Counters */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                    Impact Statistics ({stats.length})
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {stats.map((s, idx) => (
+                    <div
+                      key={s.id}
+                      className="p-4 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl space-y-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={s.value}
+                          onChange={(e) => {
+                            const updated = [...stats];
+                            updated[idx].value = e.target.value;
+                            setStats(updated);
+                          }}
+                          placeholder="50"
+                          className="w-16 bg-[var(--adm-card)] border border-[var(--adm-card-border)] focus:border-[var(--primary)] rounded-lg px-2 py-1 text-xs font-bold font-mono"
+                        />
+                        <input
+                          type="text"
+                          value={s.suffix || ""}
+                          onChange={(e) => {
+                            const updated = [...stats];
+                            updated[idx].suffix = e.target.value;
+                            setStats(updated);
+                          }}
+                          placeholder="+"
+                          className="w-10 bg-[var(--adm-card)] border border-[var(--adm-card-border)] focus:border-[var(--primary)] rounded-lg px-2 py-1 text-xs font-bold font-mono"
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        value={s.label}
+                        onChange={(e) => {
+                          const updated = [...stats];
+                          updated[idx].label = e.target.value;
+                          setStats(updated);
+                        }}
+                        className="w-full bg-[var(--adm-card)] border border-[var(--adm-card-border)] focus:border-[var(--primary)] rounded-lg px-2 py-1 text-xs text-[var(--adm-text-primary)]"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="text-right">
+                  <button
+                    onClick={() => {
+                      dataStore.saveStats(stats);
+                      showToast("Stats saved & synced to Supabase.");
+                    }}
+                    className="px-5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white font-semibold rounded-xl text-xs cursor-pointer font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    Save Statistics
+                  </button>
+                </div>
+              </div>
+
+              {/* AI Innovation Cards */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[var(--secondary)]"></span>
+                    AI &amp; Operational Innovation Cards
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {aiFeatures.map((f, idx) => (
+                    <div
+                      key={f.id}
+                      className="p-4 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl space-y-2"
+                    >
+                      <input
+                        type="text"
+                        value={f.title}
+                        onChange={(e) => {
+                          const updated = [...aiFeatures];
+                          updated[idx].title = e.target.value;
+                          setAiFeatures(updated);
+                        }}
+                        className="w-full bg-[var(--adm-card)] border border-[var(--adm-card-border)] focus:border-[var(--primary)] rounded-lg px-2 py-1 text-xs font-bold text-[var(--adm-text-primary)]"
+                      />
+                      <textarea
+                        rows={3}
+                        value={f.desc}
+                        onChange={(e) => {
+                          const updated = [...aiFeatures];
+                          updated[idx].desc = e.target.value;
+                          setAiFeatures(updated);
+                        }}
+                        className="w-full bg-[var(--adm-card)] border border-[var(--adm-card-border)] focus:border-[var(--primary)] rounded-lg px-2 py-1 text-xs text-[var(--adm-text-muted)]"
+                      ></textarea>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-right">
+                  <button
+                    onClick={() => {
+                      dataStore.saveAIInnovation(aiFeatures);
+                      showToast(
+                        "AI Innovation cards saved & synced to Supabase.",
+                      );
+                    }}
+                    className="px-5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white font-semibold rounded-xl text-xs cursor-pointer font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    Save AI Cards
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              5. ABOUT US & TEAM MEMBERS
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "about" && about && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Core Story & Statements */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                  Corporate Story &amp; Purpose
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Our Story (Paragraphs)
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={about.story}
+                      onChange={(e) =>
+                        setAbout({ ...about, story: e.target.value })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-3 text-xs outline-none leading-relaxed text-[var(--adm-text-primary)]"
+                    ></textarea>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                        Mission Statement
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={about.mission}
+                        onChange={(e) =>
+                          setAbout({ ...about, mission: e.target.value })
+                        }
+                        className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-3 text-xs outline-none text-[var(--adm-text-primary)]"
+                      ></textarea>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                        Vision Statement
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={about.vision}
+                        onChange={(e) =>
+                          setAbout({ ...about, vision: e.target.value })
+                        }
+                        className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-3 text-xs outline-none text-[var(--adm-text-primary)]"
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <button
+                    onClick={() => {
+                      dataStore.saveAbout(about);
+                      showToast("About statements saved & synced to Supabase.");
+                    }}
+                    className="px-5 py-2.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white font-semibold rounded-xl text-xs cursor-pointer shadow-md shadow-[var(--primary)]/20 font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    Save About Statements
+                  </button>
+                </div>
+              </div>
+
+              {/* Leadership Team Members */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                      Leadership Team Profiles ({team.length})
+                    </h3>
+                    <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                      Manage executive bios, profile photos, and published
+                      statuses displayed on `/about`.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      setEditModal({
+                        type: "team",
+                        item: {
+                          id: `team-${Date.now()}`,
+                          name: "",
+                          role: "",
+                          bio: "",
+                          image: "/logo.png",
+                          socialLinks: { linkedin: "", email: "" },
+                          status: "published",
+                        },
+                        isNew: true,
+                      })
+                    }
+                    className="px-3.5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    + Add Executive Profile
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {team.map((m) => (
+                    <div
+                      key={m.id}
+                      className="p-4 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-2xl flex gap-4 items-start hover:border-[var(--primary)] transition-colors"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={m.image}
+                        alt={m.name}
+                        className="w-16 h-16 rounded-xl object-cover bg-[var(--adm-card)] border border-[var(--adm-card-border)] shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-sm font-bold text-[var(--adm-text-primary)] truncate font-[family-name:var(--font-space-grotesk)]">
+                              {m.name}
+                            </h4>
+                            <div className="text-xs text-[var(--primary)] font-semibold truncate">
+                              {m.role}
+                            </div>
+                          </div>
+                          <span
+                            className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase ${
+                              m.status === "published"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-gray-100 text-gray-600 border border-gray-200"
+                            }`}
+                          >
+                            {m.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[var(--adm-text-muted)] line-clamp-2 mt-1.5 leading-relaxed">
+                          {m.bio}
+                        </p>
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--adm-card-border)]">
+                          <AdminEditButton
+                            onClick={() =>
+                              setEditModal({
+                                type: "team",
+                                item: { ...m },
+                                isNew: false,
+                              })
+                            }
+                            label="Edit Profile"
+                          />
+                          <AdminDeleteButton
+                            onClick={() => {
+                              if (!confirm(`Delete ${m.name}?`)) return;
+                              const updated = team.filter((t) => t.id !== m.id);
+                              setTeam(updated);
+                              dataStore.saveTeam(updated);
+                              showToast(
+                                `Removed ${m.name} & synced to Supabase.`,
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              6. SERVICES DIRECTORY
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "services" && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs flex justify-between items-center">
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                    Services &amp; Core Offerings Directory ({services.length})
+                  </h3>
+                  <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                    Powers `/services` and dynamic route pages `/services/[id]`.
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    setEditModal({
+                      type: "service",
+                      item: {
+                        id: `service-${Date.now()}`,
+                        num: `0${services.length + 1}`,
+                        badge: "Full-Lifecycle",
+                        title: "",
+                        headline: "",
+                        desc: "",
+                        caps: ["Capability 1", "Capability 2"],
+                        idealFor: ["Government Agencies"],
+                        status: "published",
+                      },
+                      isNew: true,
+                    })
+                  }
+                  className="px-3.5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)]"
+                >
+                  + Create Service Line
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {services.map((srv) => (
+                  <div
+                    key={srv.id}
+                    className="p-5 bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl shadow-xs space-y-3 hover:border-[var(--primary)] transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase bg-[rgba(225,77,24,0.08)] text-[var(--primary)] border border-[rgba(225,77,24,0.2)]">
+                          {srv.num} &bull; {srv.badge}
+                        </span>
+                        <h4 className="text-sm font-bold text-[var(--adm-text-primary)] mt-2 font-[family-name:var(--font-space-grotesk)]">
+                          {srv.title}
+                        </h4>
+                      </div>
+                      <span
+                        className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase ${
+                          srv.status === "published"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-gray-100 text-gray-600 border border-gray-200"
+                        }`}
+                      >
+                        {srv.status}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-[var(--adm-text-muted)] line-clamp-2 leading-relaxed">
+                      {srv.desc}
+                    </p>
+
+                    <div className="text-xs text-[var(--adm-text-muted)] font-medium">
+                      <strong className="text-[var(--adm-text-primary)] font-bold">
+                        Key Caps:
+                      </strong>{" "}
+                      {srv.caps.slice(0, 3).join(", ")}
+                      {srv.caps.length > 3 && ` +${srv.caps.length - 3} more`}
+                    </div>
+
+                    <div className="flex justify-between items-center pt-3 border-t border-[var(--adm-card-border)]">
+                      <Link
+                        href={`/services/${srv.id}`}
+                        target="_blank"
+                        className="text-xs text-[var(--adm-text-muted)] hover:text-[var(--primary)] no-underline font-medium"
+                      >
+                        Preview Page ↗
+                      </Link>
+                      <div className="flex items-center gap-2">
+                        <AdminEditButton
+                          onClick={() =>
+                            setEditModal({
+                              type: "service",
+                              item: { ...srv },
+                              isNew: false,
+                            })
+                          }
+                        />
+                        <AdminDeleteButton
+                          onClick={() => {
+                            if (!confirm(`Delete service: ${srv.title}?`))
+                              return;
+                            const updated = services.filter(
+                              (s) => s.id !== srv.id,
+                            );
+                            setServices(updated);
+                            dataStore.saveServices(updated);
+                            showToast(`Service deleted & synced to Supabase.`);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              7. CONTRACTS & CAPABILITIES
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "contracts" && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Federal Contracts */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                      Active Federal Contract Solicitations ({contracts.length})
+                    </h3>
+                    <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                      Powers `/contracts` active teaming feed and solicitation
+                      intake.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      setEditModal({
+                        type: "contract",
+                        item: {
+                          solicitation: `FEMA-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+                          title: "",
+                          agency: "Federal Emergency Management Agency (FEMA)",
+                          naics: "541611",
+                          setAside: "HUBZone Set-Aside",
+                          postedDate: new Date().toISOString().slice(0, 10),
+                          deadline: new Date(Date.now() + 30 * 86400000)
+                            .toISOString()
+                            .slice(0, 10),
+                          location: "Orlando, FL / Regional Deployments",
+                          status: "Active Solicitation",
+                        },
+                        isNew: true,
+                      })
+                    }
+                    className="px-3.5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    + Add Solicitation
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-[var(--adm-text-primary)]">
+                    <thead className="bg-[var(--adm-card-subtle)] border-b border-[var(--adm-card-border)] text-[var(--adm-text-muted)] uppercase text-xs font-bold tracking-wider font-[family-name:var(--font-space-grotesk)]">
+                      <tr>
+                        <th className="py-3 px-4">Solicitation</th>
+                        <th className="py-3 px-4">Title</th>
+                        <th className="py-3 px-4">Agency</th>
+                        <th className="py-3 px-4">NAICS &amp; Set-Aside</th>
+                        <th className="py-3 px-4">Deadline</th>
+                        <th className="py-3 px-4 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border)]">
+                      {contracts.map((c, idx) => (
+                        <tr
+                          key={idx}
+                          className="hover:bg-[var(--adm-card-subtle)]/80 transition-colors"
+                        >
+                          <td className="py-3 px-4 font-mono font-bold text-[var(--adm-text-primary)]">
+                            {c.solicitation}
+                          </td>
+                          <td className="py-3 px-4 font-bold text-[var(--adm-text-primary)] max-w-xs truncate">
+                            {c.title}
+                          </td>
+                          <td className="py-3 px-4 text-[var(--adm-text-muted)] truncate max-w-xs font-semibold">
+                            {c.agency}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-mono bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] px-2 py-0.5 rounded text-xs font-semibold text-[var(--adm-text-primary)]">
+                              {c.naics}
+                            </span>{" "}
+                            &bull; {c.setAside}
+                          </td>
+                          <td className="py-3 px-4 font-mono text-xs text-red-600 font-bold">
+                            {c.deadline}
+                          </td>
+                          <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                            <AdminEditButton
+                              onClick={() =>
+                                setEditModal({
+                                  type: "contract",
+                                  item: { ...c },
+                                  isNew: false,
+                                })
+                              }
+                            />
+                            <AdminDeleteButton
+                              onClick={() => {
+                                if (
+                                  !confirm(
+                                    `Delete solicitation ${c.solicitation}?`,
+                                  )
+                                )
+                                  return;
+                                const updated = contracts.filter(
+                                  (_, i) => i !== idx,
+                                );
+                                setContracts(updated);
+                                dataStore.saveContracts(updated);
+                                showToast(
+                                  "Solicitation removed & synced to Supabase.",
+                                );
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Socioeconomic Capabilities */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[var(--secondary)]"></span>
+                  Socioeconomic Capabilities &amp; Designations (
+                  {capabilities.length})
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {capabilities.map((cap, idx) => (
+                    <div
+                      key={cap.id}
+                      className="p-4 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl space-y-2 hover:border-[var(--primary)] transition-colors"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-[var(--primary)] font-[family-name:var(--font-space-grotesk)]">
+                          {cap.acronym} &bull; {cap.name}
+                        </span>
+                        <AdminEditButton
+                          onClick={() =>
+                            setEditModal({
+                              type: "capability",
+                              item: { ...cap },
+                              isNew: false,
+                            })
+                          }
+                        />
+                      </div>
+                      <p className="text-xs text-[var(--adm-text-muted)] line-clamp-2 leading-relaxed">
+                        {cap.desc}
+                      </p>
+                      <div className="text-xs text-[var(--adm-text-primary)] font-medium">
+                        Advantage:{" "}
+                        <strong className="font-bold">{cap.oppVal}</strong>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              8. PARTNERSHIPS & TEAMING DIRECTORY CMS
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "partnerships" && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs flex flex-wrap justify-between items-center gap-4">
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                    Teaming &amp; Subcontracting Opportunities (
+                    {partnerCards.length})
+                  </h3>
+                  <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                    Manage the 4 strategic partnership tiers and subcontractor
+                    vetting cards displayed on `/partnerships`.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 font-[family-name:var(--font-space-grotesk)]">
+                  <Link
+                    href="/partnerships"
+                    target="_blank"
+                    className="px-3.5 py-2 border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] rounded-xl text-xs font-semibold text-[var(--adm-text-primary)] transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span>View /partnerships ↗</span>
+                  </Link>
+                  <button
+                    onClick={() =>
+                      setEditModal({
+                        type: "partner",
+                        item: {
+                          id: `partner-${Date.now()}`,
+                          badge: "Teaming Track",
+                          title: "",
+                          desc: "",
+                          status: "published",
+                        },
+                        isNew: true,
+                      })
+                    }
+                    className="px-4 py-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md shadow-[var(--primary)]/20 transition-all flex items-center gap-1.5"
+                  >
+                    <span>+ Add Teaming Pillar</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {partnerCards.map((card) => (
+                  <div
+                    key={card.id}
+                    className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-5 shadow-xs space-y-3 hover:border-[var(--primary)] transition-colors flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="py-1 px-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[rgba(225,77,24,0.08)] text-[var(--primary)] border border-[rgba(225,77,24,0.2)]">
+                          {card.badge}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            card.status === "published"
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                              : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                          }`}
+                        >
+                          {card.status}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+                        {card.title}
+                      </h4>
+                      <p className="text-xs text-[var(--adm-text-muted)] line-clamp-3 leading-relaxed mt-1">
+                        {card.desc}
+                      </p>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-3 border-t border-[var(--adm-card-border)]">
+                      <AdminEditButton
+                        onClick={() =>
+                          setEditModal({
+                            type: "partner",
+                            item: { ...card },
+                            isNew: false,
+                          })
+                        }
+                      />
+                      <AdminDeleteButton
+                        onClick={() => {
+                          if (!confirm(`Delete teaming tier "${card.title}"?`))
+                            return;
+                          const updated = partnerCards.filter(
+                            (p) => p.id !== card.id,
+                          );
+                          setPartnerCards(updated);
+                          dataStore.savePartnerCards(updated);
+                          showToast(
+                            "Teaming pillar deleted & synced to Supabase.",
+                          );
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              9. NEWS & INSIGHTS ARTICLES
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "news" && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs flex justify-between items-center">
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                    News Articles, Solicitations &amp; Press ({articles.length})
+                  </h3>
+                  <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                    Powers `/news` and dynamic story routes `/news/[slug]`.
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    setEditModal({
+                      type: "article",
+                      item: {
+                        slug: `intel-bulletin-${Date.now().toString().slice(-4)}`,
+                        title: "",
+                        category: "Emergency Management",
+                        summary: "",
+                        content: "",
+                        publishedDate: new Date().toISOString().slice(0, 10),
+                        author: "Operations Desk",
+                        status: "published",
+                      },
+                      isNew: true,
+                    })
+                  }
+                  className="px-3.5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)]"
+                >
+                  + Post News Article
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {articles.map((art) => (
+                  <div
+                    key={art.slug}
+                    className="p-5 bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl shadow-xs space-y-3 hover:border-[var(--primary)] transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-[var(--primary)] font-[family-name:var(--font-space-grotesk)]">
+                          {art.category} &bull; {art.publishedDate}
+                        </span>
+                        <h4 className="text-sm font-bold text-[var(--adm-text-primary)] mt-1 font-[family-name:var(--font-space-grotesk)]">
+                          {art.title}
+                        </h4>
+                      </div>
+                      <span
+                        className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase ${
+                          art.status === "published"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-gray-100 text-gray-600 border border-gray-200"
+                        }`}
+                      >
+                        {art.status}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-[var(--adm-text-muted)] line-clamp-2 leading-relaxed">
+                      {art.summary}
+                    </p>
+
+                    <div className="flex justify-between items-center pt-3 border-t border-[var(--adm-card-border)]">
+                      <Link
+                        href={`/news/${art.slug}`}
+                        target="_blank"
+                        className="text-xs text-[var(--adm-text-muted)] hover:text-[var(--primary)] no-underline font-medium"
+                      >
+                        Read Article ↗
+                      </Link>
+                      <div className="flex items-center gap-2">
+                        <AdminEditButton
+                          onClick={() =>
+                            setEditModal({
+                              type: "article",
+                              item: { ...art },
+                              isNew: false,
+                            })
+                          }
+                        />
+                        <AdminDeleteButton
+                          onClick={() => {
+                            if (!confirm(`Delete article: ${art.title}?`))
+                              return;
+                            const updated = articles.filter(
+                              (a) => a.slug !== art.slug,
+                            );
+                            setArticles(updated);
+                            dataStore.saveArticles(updated);
+                            showToast("Article deleted & synced to Supabase.");
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              9. CAREERS & CADRES
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "careers" && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs flex justify-between items-center">
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                    Careers Portal &amp; Emergency Cadre Listings ({jobs.length}
+                    )
+                  </h3>
+                  <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                    Powers `/careers` directory and dynamic application forms
+                    `/careers/[id]`.
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    setEditModal({
+                      type: "job",
+                      item: {
+                        id: `job-${Date.now().toString().slice(-4)}`,
+                        title: "",
+                        department: "Emergency Operations & Relief",
+                        location: "Orlando, Florida / Remote",
+                        type: "Cadre / Temporary ($25.00–$35.00/hr)",
+                        summary: "",
+                        description: "",
+                        responsibilities: [
+                          "Fulfill mission-specific field recovery scope",
+                        ],
+                        requirements: [
+                          "High school diploma or equivalent required",
+                        ],
+                        postedDate: new Date().toISOString().slice(0, 10),
+                        status: "published",
+                      },
+                      isNew: true,
+                    })
+                  }
+                  className="px-3.5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)]"
+                >
+                  + Post Job Requisition
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {jobs.map((job) => (
+                  <div
+                    key={job.id}
+                    className="p-5 bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl shadow-xs space-y-3 hover:border-[var(--primary)] transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-[var(--primary)] font-[family-name:var(--font-space-grotesk)]">
+                          {job.department} &bull; {job.type}
+                        </span>
+                        <h4 className="text-sm font-bold text-[var(--adm-text-primary)] mt-1 font-[family-name:var(--font-space-grotesk)]">
+                          {job.title}
+                        </h4>
+                      </div>
+                      <span
+                        className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase ${
+                          job.status === "published"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-gray-100 text-gray-600 border border-gray-200"
+                        }`}
+                      >
+                        {job.status}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-[var(--adm-text-muted)] line-clamp-2 leading-relaxed">
+                      {job.summary}
+                    </p>
+
+                    <div className="flex justify-between items-center pt-3 border-t border-[var(--adm-card-border)]">
+                      <Link
+                        href={`/careers/${job.id}`}
+                        target="_blank"
+                        className="text-xs text-[var(--adm-text-muted)] hover:text-[var(--primary)] no-underline font-medium"
+                      >
+                        Preview Job Form ↗
+                      </Link>
+                      <div className="flex items-center gap-2">
+                        <AdminEditButton
+                          onClick={() =>
+                            setEditModal({
+                              type: "job",
+                              item: { ...job },
+                              isNew: false,
+                            })
+                          }
+                        />
+                        <AdminDeleteButton
+                          onClick={() => {
+                            if (
+                              !confirm(`Delete job requisition: ${job.title}?`)
+                            )
+                              return;
+                            const updated = jobs.filter((j) => j.id !== job.id);
+                            setJobs(updated);
+                            dataStore.saveJobs(updated);
+                            showToast(
+                              "Job requisition removed & synced to Supabase.",
+                            );
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              10. COMMUNITY (INFERNO CARES) & TESTIMONIALS
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "community" && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Community Impact Stories */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                      Inferno Cares Community Impact Initiatives (
+                      {communityStories.length})
+                    </h3>
+                    <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                      Showcased on homepage and `/about` (Kickball relief
+                      tournament, Academic scholarships).
+                    </p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      setEditModal({
+                        type: "community",
+                        item: {
+                          id: `story-${Date.now()}`,
+                          title: "",
+                          summary: "",
+                          content: "",
+                          image: "/logo.jpeg",
+                          featured: true,
+                          status: "published",
+                        },
+                        isNew: true,
+                      })
+                    }
+                    className="px-3.5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    + Add Community Story
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {communityStories.map((story) => (
+                    <div
+                      key={story.id}
+                      className="p-4 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-2xl flex gap-4 items-start hover:border-[var(--primary)] transition-colors"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={story.image}
+                        alt={story.title}
+                        className="w-20 h-20 rounded-xl object-cover bg-[var(--adm-card)] shrink-0 border border-[var(--adm-card-border)]"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-[var(--adm-text-primary)] truncate font-[family-name:var(--font-space-grotesk)]">
+                          {story.title}
+                        </h4>
+                        <p className="text-xs text-[var(--adm-text-muted)] line-clamp-2 mt-1 leading-relaxed">
+                          {story.summary}
+                        </p>
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--adm-card-border)]">
+                          <AdminEditButton
+                            onClick={() =>
+                              setEditModal({
+                                type: "community",
+                                item: { ...story },
+                                isNew: false,
+                              })
+                            }
+                          />
+                          <AdminDeleteButton
+                            onClick={() => {
+                              if (!confirm(`Delete story: ${story.title}?`))
+                                return;
+                              const updated = communityStories.filter(
+                                (s) => s.id !== story.id,
+                              );
+                              setCommunityStories(updated);
+                              dataStore.saveCommunityStories(updated);
+                              showToast(
+                                "Community story removed & synced to Supabase.",
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Verified Testimonials */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[var(--secondary)]"></span>
+                    Client &amp; Partner Testimonials ({testimonials.length})
+                  </h3>
+                  <button
+                    onClick={() =>
+                      setEditModal({
+                        type: "testimonial",
+                        item: {
+                          id: `test-${Date.now()}`,
+                          name: "",
+                          company: "",
+                          role: "",
+                          rating: 5,
+                          text: "",
+                          status: "published",
+                        },
+                        isNew: true,
+                      })
+                    }
+                    className="px-3.5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    + Add Testimonial
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {testimonials.map((t) => (
+                    <div
+                      key={t.id}
+                      className="p-4 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl space-y-2 hover:border-[var(--primary)] transition-colors"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-[var(--primary)] font-bold text-xs">
+                          {"★".repeat(t.rating)}
+                        </span>
+                        <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {t.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--adm-text-muted)] line-clamp-3 italic leading-relaxed">
+                        &ldquo;{t.text}&rdquo;
+                      </p>
+                      <div className="pt-2 border-t border-[var(--adm-card-border)] flex justify-between items-center text-xs">
+                        <div>
+                          <div className="font-bold text-[var(--adm-text-primary)]">
+                            {t.name}
+                          </div>
+                          <div className="text-xs text-[var(--adm-text-muted)] font-medium">
+                            {t.company}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <AdminEditButton
+                            onClick={() =>
+                              setEditModal({
+                                type: "testimonial",
+                                item: { ...t },
+                                isNew: false,
+                              })
+                            }
+                          />
+                          <AdminDeleteButton
+                            onClick={() => {
+                              if (
+                                !confirm(`Delete testimonial from ${t.name}?`)
+                              )
+                                return;
+                              const updated = testimonials.filter(
+                                (item) => item.id !== t.id,
+                              );
+                              setTestimonials(updated);
+                              dataStore.saveTestimonials(updated);
+                              showToast(
+                                "Testimonial removed & synced to Supabase.",
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              11. FAQ, RESOURCES, CHATBOT Q&A & LEGAL PAGES
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "knowledge" && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Chatbot Quick Answers CMS */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                      AI Chatbot Quick Answers &amp; Knowledge Base (
+                      {chatbotQA.length})
+                    </h3>
+                    <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                      Powers the floating AI Operations Desk widget and instant
+                      preset chips.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      setEditModal({
+                        type: "chatbotQA",
+                        item: {
+                          question: "New Coordination Query?",
+                          keywords: ["scope", "assistance"],
+                          answer:
+                            "The Inferno Group operations desk coordinates...",
+                        },
+                        isNew: true,
+                      })
+                    }
+                    className="px-3.5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    + Add Chatbot Q&amp;A
+                  </button>
+                </div>
+
+                <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+                  {chatbotQA.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl space-y-1.5 hover:border-[var(--primary)] transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="text-xs font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+                          💬 {item.question}
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <AdminEditButton
+                            onClick={() =>
+                              setEditModal({
+                                type: "chatbotQA",
+                                item: { ...item },
+                                isNew: false,
+                              })
+                            }
+                          />
+                          <AdminDeleteButton
+                            onClick={() => {
+                              if (!confirm(`Delete Q&A: ${item.question}?`))
+                                return;
+                              const updated = chatbotQA.filter(
+                                (_, i) => i !== idx,
+                              );
+                              setChatbotQA(updated);
+                              dataStore.saveChatbotQA(updated);
+                              showToast(
+                                "Chatbot question removed & synced to Supabase.",
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-[var(--adm-text-muted)] line-clamp-2 leading-relaxed">
+                        {item.answer}
+                      </p>
+                      <div className="text-xs text-[var(--adm-text-muted)] font-mono font-medium">
+                        Keywords: {item.keywords.join(", ")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* FAQ Base CMS */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                      Portal Frequently Asked Questions ({faqs.length})
+                    </h3>
+                    <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                      Categorized accordion entries on `/faq`.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      setEditModal({
+                        type: "faq",
+                        item: {
+                          id: `faq-${Date.now()}`,
+                          question: "",
+                          answer: "",
+                          category: "credentials",
+                          status: "published",
+                        },
+                        isNew: true,
+                      })
+                    }
+                    className="px-3.5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    + Add FAQ
+                  </button>
+                </div>
+
+                <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                  {faqs.map((faq) => (
+                    <div
+                      key={faq.id}
+                      className="p-3.5 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl space-y-1.5 hover:border-[var(--primary)] transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase bg-[rgba(225,77,24,0.08)] text-[var(--primary)] border border-[rgba(225,77,24,0.2)]">
+                            {faq.category}
+                          </span>
+                          <span className="ml-2 text-xs font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+                            {faq.question}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <AdminEditButton
+                            onClick={() =>
+                              setEditModal({
+                                type: "faq",
+                                item: { ...faq },
+                                isNew: false,
+                              })
+                            }
+                          />
+                          <AdminDeleteButton
+                            onClick={() => {
+                              if (!confirm(`Delete FAQ?`)) return;
+                              const updated = faqs.filter(
+                                (f) => f.id !== faq.id,
+                              );
+                              setFaqs(updated);
+                              dataStore.saveFAQs(updated);
+                              showToast("FAQ removed & synced to Supabase.");
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-[var(--adm-text-muted)] line-clamp-2 leading-relaxed">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Downloadable Resources Library */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--secondary)]"></span>
+                      Downloadable Resources &amp; Playbooks ({resources.length}
+                      )
+                    </h3>
+                    <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                      Gated resources available on `/resources`.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      setEditModal({
+                        type: "resource",
+                        item: {
+                          id: `res-${Date.now()}`,
+                          title: "",
+                          description: "",
+                          category: "Emergency Playbooks",
+                          fileType: "PDF Compliance Guide",
+                          fileSize: "2.4 MB",
+                          downloads: 120,
+                        },
+                        isNew: true,
+                      })
+                    }
+                    className="px-3.5 py-2 bg-[var(--primary)] hover:bg-[#c84113] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-xs font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    + Add Resource
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {resources.map((res) => (
+                    <div
+                      key={res.id}
+                      className="p-3.5 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl space-y-1 hover:border-[var(--primary)] transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="text-xs font-bold text-[var(--adm-text-primary)] truncate font-[family-name:var(--font-space-grotesk)]">
+                          📄 {res.title}
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <AdminEditButton
+                            onClick={() =>
+                              setEditModal({
+                                type: "resource",
+                                item: { ...res },
+                                isNew: false,
+                              })
+                            }
+                          />
+                          <AdminDeleteButton
+                            onClick={() => {
+                              if (!confirm(`Delete resource?`)) return;
+                              const updated = resources.filter(
+                                (r) => r.id !== res.id,
+                              );
+                              setResources(updated);
+                              dataStore.saveResources(updated);
+                              showToast(
+                                "Resource removed & synced to Supabase.",
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-[var(--adm-text-muted)] line-clamp-1">
+                        {res.description}
+                      </p>
+                      <div className="text-xs text-[var(--adm-text-muted)] font-mono font-medium">
+                        {res.fileType} &bull; {res.fileSize} &bull;{" "}
+                        {res.downloads} downloads
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Legal Pages Editor */}
+              {privacy && conduct && (
+                <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[var(--navy)]"></span>
+                    Legal &amp; Compliance Policy Documentation
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                        Privacy Policy Content (/privacy)
+                      </label>
+                      <textarea
+                        rows={8}
+                        value={privacy.content}
+                        onChange={(e) =>
+                          setPrivacy({ ...privacy, content: e.target.value })
+                        }
+                        className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-3 text-xs outline-none font-mono leading-relaxed"
+                      ></textarea>
+                      <button
+                        onClick={() => {
+                          dataStore.saveLegalPrivacy(privacy);
+                          showToast(
+                            "Privacy policy saved & synced to Supabase.",
+                          );
+                        }}
+                        className="mt-2 px-4 py-1.5 bg-[var(--navy)] hover:opacity-90 text-white rounded-xl text-xs font-semibold cursor-pointer font-[family-name:var(--font-space-grotesk)]"
+                      >
+                        Save Privacy Policy
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                        Standards of Conduct Content (/conduct)
+                      </label>
+                      <textarea
+                        rows={8}
+                        value={conduct.content}
+                        onChange={(e) =>
+                          setConduct({ ...conduct, content: e.target.value })
+                        }
+                        className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-3 text-xs outline-none font-mono leading-relaxed"
+                      ></textarea>
+                      <button
+                        onClick={() => {
+                          dataStore.saveLegalConduct(conduct);
+                          showToast(
+                            "Standards of Conduct saved & synced to Supabase.",
+                          );
+                        }}
+                        className="mt-2 px-4 py-1.5 bg-[var(--navy)] hover:opacity-90 text-white rounded-xl text-xs font-semibold cursor-pointer font-[family-name:var(--font-space-grotesk)]"
+                      >
+                        Save Standards of Conduct
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              13. B2G SOCIOECONOMIC ELIGIBILITY QUIZ CMS
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "quiz" && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs flex flex-wrap justify-between items-center gap-4">
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                    Diagnostic Eligibility Questions ({quizQuestions.length})
+                  </h3>
+                  <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                    Powers the interactive SBA 8(a), HUBZone, WOSB, and VOSB
+                    eligibility assessment on `/quiz`.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 font-[family-name:var(--font-space-grotesk)]">
+                  <Link
+                    href="/quiz"
+                    target="_blank"
+                    className="px-3.5 py-2 border border-[var(--adm-card-border)] bg-[var(--adm-card-subtle)] hover:border-[var(--primary)] rounded-xl text-xs font-semibold text-[var(--adm-text-primary)] transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span>View /quiz ↗</span>
+                  </Link>
+                  <button
+                    onClick={() =>
+                      setEditModal({
+                        type: "quiz",
+                        item: {
+                          id: `custom_${Date.now().toString().slice(-4)}`,
+                          text: "",
+                          description: "",
+                          options: [
+                            { label: "Yes", value: "yes" },
+                            { label: "No", value: "no" },
+                          ],
+                          status: "published",
+                        },
+                        isNew: true,
+                      })
+                    }
+                    className="px-4 py-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md shadow-[var(--primary)]/20 transition-all flex items-center gap-1.5"
+                  >
+                    <span>+ Add Diagnostic Question</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {quizQuestions.map((q, idx) => (
+                  <div
+                    key={q.id}
+                    className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-5 shadow-xs space-y-3 hover:border-[var(--primary)] transition-colors"
+                  >
+                    <div className="flex flex-wrap justify-between items-start gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--adm-card-subtle)] font-mono text-xs font-bold text-[var(--adm-text-muted)]">
+                          {idx + 1}
+                        </span>
+                        <span className="py-0.5 px-2 rounded-md font-mono text-[10px] font-bold uppercase bg-[rgba(26,86,196,0.08)] text-[var(--secondary)] border border-[rgba(26,86,196,0.2)]">
+                          {q.id}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            q.status === "published"
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                              : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                          }`}
+                        >
+                          {q.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <AdminEditButton
+                          onClick={() =>
+                            setEditModal({
+                              type: "quiz",
+                              item: { ...q },
+                              isNew: false,
+                            })
+                          }
+                        />
+                        <AdminDeleteButton
+                          onClick={() => {
+                            if (!confirm(`Delete question "${q.text}"?`))
+                              return;
+                            const updated = quizQuestions.filter(
+                              (item) => item.id !== q.id,
+                            );
+                            setQuizQuestions(updated);
+                            dataStore.saveQuizQuestions(updated);
+                            showToast(
+                              "Diagnostic question deleted & synced to Supabase.",
+                            );
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <h4 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+                      {q.text}
+                    </h4>
+                    <p className="text-xs text-[var(--adm-text-muted)] leading-relaxed">
+                      {q.description}
+                    </p>
+
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--adm-card-border)]">
+                      {q.options.map((opt, optIdx) => (
+                        <span
+                          key={optIdx}
+                          className="px-3 py-1 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-lg text-xs font-medium text-[var(--adm-text-secondary)]"
+                        >
+                          {opt.label} ({opt.value})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════
+              14. GLOBAL SITE, CORPORATE & EMERGENCY SETTINGS CMS
+          ════════════════════════════════════════════════════════════════ */}
+          {activeTab === "settings" && siteSettings && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Emergency Operations Directive Banner */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex flex-wrap justify-between items-center gap-4 border-b border-[var(--adm-card-border)] pb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                      Emergency Broadcast Alert Banner
+                    </h3>
+                    <p className="text-xs text-[var(--adm-text-muted)] font-medium">
+                      Activates an urgent emergency advisory bar across the top
+                      of every public portal page.
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2.5 cursor-pointer font-[family-name:var(--font-space-grotesk)] text-xs font-bold text-[var(--adm-text-primary)]">
+                    <input
+                      type="checkbox"
+                      checked={siteSettings.emergencyBannerActive}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          emergencyBannerActive: e.target.checked,
+                        })
+                      }
+                      className="h-4 w-4 rounded accent-[var(--primary)] cursor-pointer"
+                    />
+                    <span>
+                      {siteSettings.emergencyBannerActive
+                        ? "Active on Public Site"
+                        : "Disabled (Off)"}
+                    </span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Emergency Alert Message
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.emergencyBannerMessage}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          emergencyBannerMessage: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Emergency Dispatch Hotline Phone
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.emergencyHotline}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          emergencyHotline: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Corporate Contact & Departmental Routing */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                  Corporate Headquarters &amp; Departmental Inboxes
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Contracting &amp; Teaming Desk
+                    </label>
+                    <input
+                      type="email"
+                      value={siteSettings.contactEmail}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          contactEmail: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Talent Acquisition &amp; Resumes
+                    </label>
+                    <input
+                      type="email"
+                      value={siteSettings.careersEmail}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          careersEmail: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Inferno Cares Community Desk
+                    </label>
+                    <input
+                      type="email"
+                      value={siteSettings.communityEmail}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          communityEmail: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Primary Phone Line
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.phone}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          phone: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Headquarters Address
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.address}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          address: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Coordination Window
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.coordinationWindow}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          coordinationWindow: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Federal Contracting Identifiers */}
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl p-6 shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[var(--secondary)]"></span>
+                  Federal Contracting Identifiers (SAM.gov &amp; SBA)
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Unique Entity Identifier (UEI)
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.uei}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          uei: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      CAGE / NCAGE Code
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.cageCode}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          cageCode: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Primary NAICS Code
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.primaryNaics}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          primaryNaics: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      LinkedIn Corporate URL
+                    </label>
+                    <input
+                      type="url"
+                      value={siteSettings.linkedinUrl}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          linkedinUrl: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      X / Twitter Corporate URL
+                    </label>
+                    <input
+                      type="url"
+                      value={siteSettings.twitterUrl}
+                      onChange={(e) =>
+                        setSiteSettings({
+                          ...siteSettings,
+                          twitterUrl: e.target.value,
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      dataStore.saveSiteSettings(siteSettings);
+                      showToast(
+                        "Corporate identity & emergency settings saved & synced to Supabase.",
+                      );
+                    }}
+                    className="px-6 py-2.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-[var(--primary)]/20 font-[family-name:var(--font-space-grotesk)]"
+                  >
+                    Save All Corporate Settings
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* ── GENERIC EDIT MODAL ── */}
+      {editModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[var(--adm-card)] rounded-[24px] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-4 animate-scale-up border border-[var(--adm-card-border)]">
+            <div className="flex justify-between items-center border-b border-[var(--adm-card-border)] pb-3">
+              <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] capitalize flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                {editModal.isNew ? "Create" : "Edit"}{" "}
+                {editModal.type === "chatbotQA"
+                  ? "Chatbot Q&A"
+                  : editModal.type}
+              </h3>
+              <AdminModalCloseButton
+                onClick={() => setEditModal(null)}
+                title="Close modal"
+              />
+            </div>
+
+            {/* TEAM MEMBER MODAL */}
+            {editModal.type === "team" && (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.name}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, name: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Role &amp; Executive Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.role}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, role: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                  />
+                </div>
+                <ImageDropzone
+                  label="Profile Photo"
+                  value={editModal.item.image || ""}
+                  onChange={(val) =>
+                    setEditModal({
+                      ...editModal,
+                      item: { ...editModal.item, image: val },
+                    })
+                  }
+                  aspectRatio="square"
+                />
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Executive Biography
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editModal.item.bio}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, bio: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                  ></textarea>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Status
+                    </label>
+                    <select
+                      value={editModal.item.status}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, status: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs outline-none"
+                    >
+                      <option value="published">Published</option>
+                      <option value="draft">Draft</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Contact Email
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.socialLinks?.email || ""}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: {
+                            ...editModal.item,
+                            socialLinks: {
+                              ...editModal.item.socialLinks,
+                              email: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SERVICE MODAL */}
+            {editModal.type === "service" && (
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Number (e.g. 01)
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.num}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, num: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Badge Tag
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.badge}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, badge: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Service Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.title}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Headline
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.headline || ""}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, headline: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Overview Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editModal.item.desc}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, desc: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs"
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Capabilities (One per line)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editModal.item.caps.join("\n")}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: {
+                          ...editModal.item,
+                          caps: e.target.value.split("\n").filter(Boolean),
+                        },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs font-mono"
+                  ></textarea>
+                </div>
+              </div>
+            )}
+
+            {/* CONTRACT MODAL */}
+            {editModal.type === "contract" && (
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Solicitation Number
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.solicitation}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: {
+                            ...editModal.item,
+                            solicitation: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      NAICS Code
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.naics}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, naics: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Contract / Scope Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.title}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Issuing Government Agency
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.agency}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, agency: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Set-Aside Designation
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.setAside}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, setAside: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Submission Deadline
+                    </label>
+                    <input
+                      type="date"
+                      value={editModal.item.deadline}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, deadline: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* CHATBOT Q&A MODAL */}
+            {editModal.type === "chatbotQA" && (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Preset Chip Question (Quick Answer)
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.question}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, question: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Keywords (Comma Separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.keywords.join(", ")}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: {
+                          ...editModal.item,
+                          keywords: e.target.value
+                            .split(",")
+                            .map((k) => k.trim().toLowerCase())
+                            .filter(Boolean),
+                        },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs font-mono"
+                    placeholder="fema, debris, emergency, recovery"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Authoritative Assistant Response
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editModal.item.answer}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, answer: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs leading-relaxed"
+                  ></textarea>
+                  <span className="text-xs text-[var(--adm-text-muted)] font-medium">
+                    Supports markdown links like [Contact page](/contact) or
+                    [Services](/services).
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* ARTICLE MODAL */}
+            {editModal.type === "article" && (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Article Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.title}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Slug
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.slug}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, slug: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Category
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.category}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, category: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Summary
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editModal.item.summary}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, summary: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Full Article Body
+                  </label>
+                  <textarea
+                    rows={6}
+                    value={editModal.item.content}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, content: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs font-mono"
+                  ></textarea>
+                </div>
+              </div>
+            )}
+
+            {/* JOB MODAL */}
+            {editModal.type === "job" && (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Requisition Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.title}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Department
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.department}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: {
+                            ...editModal.item,
+                            department: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Rate / Salary &amp; Type
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.type}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, type: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Summary
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editModal.item.summary}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, summary: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Responsibilities (One per line)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editModal.item.responsibilities.join("\n")}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: {
+                          ...editModal.item,
+                          responsibilities: e.target.value
+                            .split("\n")
+                            .filter(Boolean),
+                        },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs font-mono"
+                  ></textarea>
+                </div>
+              </div>
+            )}
+
+            {/* FAQ MODAL */}
+            {editModal.type === "faq" && (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Question
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.question}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, question: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Category
+                  </label>
+                  <select
+                    value={editModal.item.category}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, category: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  >
+                    <option value="credentials">
+                      Credentials &amp; HUBZone
+                    </option>
+                    <option value="emergency">Emergency Management</option>
+                    <option value="services">Services &amp; Logistics</option>
+                    <option value="partnership">Teaming &amp; Bonding</option>
+                    <option value="community">Inferno Cares</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Answer
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editModal.item.answer}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, answer: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs leading-relaxed"
+                  ></textarea>
+                </div>
+              </div>
+            )}
+
+            {/* COMMUNITY STORY MODAL */}
+            {editModal.type === "community" && (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Initiative Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.title}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  />
+                </div>
+                <ImageDropzone
+                  label="Story Feature Image"
+                  value={editModal.item.image || ""}
+                  onChange={(val) =>
+                    setEditModal({
+                      ...editModal,
+                      item: { ...editModal.item, image: val },
+                    })
+                  }
+                  aspectRatio="wide"
+                />
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Summary
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editModal.item.summary}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, summary: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Detailed Story
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editModal.item.content}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, content: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  ></textarea>
+                </div>
+              </div>
+            )}
+
+            {/* TESTIMONIAL MODAL */}
+            {editModal.type === "testimonial" && (
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Client Name
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.name}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, name: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Company / Organization
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.company}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, company: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Client Quote
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editModal.item.text}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, text: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  ></textarea>
+                </div>
+              </div>
+            )}
+
+            {/* RESOURCE MODAL */}
+            {editModal.type === "resource" && (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Document Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.title}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Category
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.category}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, category: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editModal.item.description}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: {
+                          ...editModal.item,
+                          description: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  ></textarea>
+                </div>
+              </div>
+            )}
+
+            {/* CAPABILITY MODAL */}
+            {editModal.type === "capability" && (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Capability Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.title}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Description
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editModal.item.desc}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, desc: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Procurement Advantage Value
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.oppVal}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, oppVal: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* PARTNER / SUBCONTRACTING PILLAR MODAL */}
+            {editModal.type === "partner" && (
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Pillar Track Badge
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.badge}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, badge: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                      placeholder="e.g. Direct Teaming, Tier-1 Subcontractor"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Status
+                    </label>
+                    <select
+                      value={editModal.item.status}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: {
+                            ...editModal.item,
+                            status: e.target.value as "published" | "draft",
+                          },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    >
+                      <option value="published">Published</option>
+                      <option value="draft">Draft</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Pillar Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.title}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs font-semibold"
+                    placeholder="e.g. Subcontracting Opportunities"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Scope &amp; Value Proposition Description
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editModal.item.desc}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, desc: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2.5 text-xs leading-relaxed"
+                    placeholder="Describe how partners interface with The Inferno Group under this pillar..."
+                  ></textarea>
+                </div>
+              </div>
+            )}
+
+            {/* QUIZ DIAGNOSTIC QUESTION MODAL */}
+            {editModal.type === "quiz" && (
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Diagnostic Question Key / ID
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.id}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, id: e.target.value },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs font-mono"
+                      placeholder="e.g. hubzone_certified, past_perf"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Status
+                    </label>
+                    <select
+                      value={editModal.item.status}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: {
+                            ...editModal.item,
+                            status: e.target.value as "published" | "draft",
+                          },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    >
+                      <option value="published">Published</option>
+                      <option value="draft">Draft</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Question Text
+                  </label>
+                  <input
+                    type="text"
+                    value={editModal.item.text}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, text: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs font-semibold"
+                    placeholder="e.g. Does your entity hold active SAM.gov CAGE registration?"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Regulatory Context / Guidance
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editModal.item.description}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: {
+                          ...editModal.item,
+                          description: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs leading-relaxed"
+                    placeholder="Explain the compliance requirement or diagnostic relevance under FAR/SBA rules..."
+                  ></textarea>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Option A Label (Affirmative)
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.options?.[0]?.label ?? "Yes"}
+                      onChange={(e) => {
+                        const opts = [
+                          ...(editModal.item.options || [
+                            { label: "Yes", value: "yes" },
+                            { label: "No", value: "no" },
+                          ]),
+                        ];
+                        opts[0] = {
+                          ...opts[0],
+                          label: e.target.value,
+                          value: "yes",
+                        };
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, options: opts },
+                        });
+                      }}
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Option B Label (Negative)
+                    </label>
+                    <input
+                      type="text"
+                      value={editModal.item.options?.[1]?.label ?? "No"}
+                      onChange={(e) => {
+                        const opts = [
+                          ...(editModal.item.options || [
+                            { label: "Yes", value: "yes" },
+                            { label: "No", value: "no" },
+                          ]),
+                        ];
+                        opts[1] = {
+                          ...opts[1],
+                          label: e.target.value,
+                          value: "no",
+                        };
+                        setEditModal({
+                          ...editModal,
+                          item: { ...editModal.item, options: opts },
+                        });
+                      }}
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Save Buttons */}
+            <div className="flex justify-end gap-2 pt-3 border-t border-[var(--adm-card-border)] font-[family-name:var(--font-space-grotesk)]">
+              <button
+                onClick={() => setEditModal(null)}
+                className="px-4 py-2 border border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] hover:border-[var(--primary)] rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const { type, item, isNew } = editModal;
+                  if (type === "team") {
+                    const updated = isNew
+                      ? [item, ...team]
+                      : team.map((t) => (t.id === item.id ? item : t));
+                    setTeam(updated);
+                    dataStore.saveTeam(updated);
+                  } else if (type === "service") {
+                    const updated = isNew
+                      ? [...services, item]
+                      : services.map((s) => (s.id === item.id ? item : s));
+                    setServices(updated);
+                    dataStore.saveServices(updated);
+                  } else if (type === "contract") {
+                    const updated = isNew
+                      ? [item, ...contracts]
+                      : contracts.map((c) =>
+                          c.solicitation === item.solicitation ? item : c,
+                        );
+                    setContracts(updated);
+                    dataStore.saveContracts(updated);
+                  } else if (type === "chatbotQA") {
+                    const updated = isNew
+                      ? [item, ...chatbotQA]
+                      : chatbotQA.map((q) =>
+                          q.question === item.question ? item : q,
+                        );
+                    setChatbotQA(updated);
+                    dataStore.saveChatbotQA(updated);
+                  } else if (type === "article") {
+                    const updated = isNew
+                      ? [item, ...articles]
+                      : articles.map((a) => (a.slug === item.slug ? item : a));
+                    setArticles(updated);
+                    dataStore.saveArticles(updated);
+                  } else if (type === "job") {
+                    const updated = isNew
+                      ? [item, ...jobs]
+                      : jobs.map((j) => (j.id === item.id ? item : j));
+                    setJobs(updated);
+                    dataStore.saveJobs(updated);
+                  } else if (type === "faq") {
+                    const updated = isNew
+                      ? [item, ...faqs]
+                      : faqs.map((f) => (f.id === item.id ? item : f));
+                    setFaqs(updated);
+                    dataStore.saveFAQs(updated);
+                  } else if (type === "community") {
+                    const updated = isNew
+                      ? [item, ...communityStories]
+                      : communityStories.map((s) =>
+                          s.id === item.id ? item : s,
+                        );
+                    setCommunityStories(updated);
+                    dataStore.saveCommunityStories(updated);
+                  } else if (type === "testimonial") {
+                    const updated = isNew
+                      ? [item, ...testimonials]
+                      : testimonials.map((t) => (t.id === item.id ? item : t));
+                    setTestimonials(updated);
+                    dataStore.saveTestimonials(updated);
+                  } else if (type === "resource") {
+                    const updated = isNew
+                      ? [item, ...resources]
+                      : resources.map((r) => (r.id === item.id ? item : r));
+                    setResources(updated);
+                    dataStore.saveResources(updated);
+                  } else if (type === "capability") {
+                    const updated = capabilities.map((c) =>
+                      c.id === item.id ? item : c,
+                    );
+                    setCapabilities(updated);
+                    dataStore.saveCapabilities(updated);
+                  } else if (type === "partner") {
+                    const updated = isNew
+                      ? [item, ...partnerCards]
+                      : partnerCards.map((p) => (p.id === item.id ? item : p));
+                    setPartnerCards(updated);
+                    dataStore.savePartnerCards(updated);
+                  } else if (type === "quiz") {
+                    const updated = isNew
+                      ? [...quizQuestions, item]
+                      : quizQuestions.map((q) => (q.id === item.id ? item : q));
+                    setQuizQuestions(updated);
+                    dataStore.saveQuizQuestions(updated);
+                  }
+                  setEditModal(null);
+                  showToast("Changes saved & synced to Supabase.");
+                }}
+                className="px-5 py-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-md shadow-[var(--primary)]/20"
+              >
+                Save Record
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

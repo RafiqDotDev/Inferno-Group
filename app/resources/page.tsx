@@ -4,9 +4,11 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import RevealOnMount from "@/components/RevealOnMount";
 import { resourcesData } from "@/lib/resourcesData";
+import { dataStore } from "@/utils/dataStore";
 
 export default function ResourcesPage() {
   const [isMounted, setIsMounted] = useState(false);
+  const [resources, setResources] = useState<Resource[]>(resourcesData);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCat, setSelectedCat] = useState("all");
   
@@ -20,10 +22,21 @@ export default function ResourcesPage() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
+    const refreshResources = () => setResources(dataStore.getResources());
+    refreshResources();
+
     const timer = setTimeout(() => {
       setIsMounted(true);
     }, 50);
-    return () => clearTimeout(timer);
+
+    window.addEventListener("storage", refreshResources);
+    window.addEventListener("cms-update", refreshResources);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("storage", refreshResources);
+      window.removeEventListener("cms-update", refreshResources);
+    };
   }, []);
 
   const handleDownloadClick = (res: Resource) => {
@@ -41,20 +54,16 @@ export default function ResourcesPage() {
       setIsSubmitting(false);
       setIsSuccess(true);
 
-      // Save lead to localStorage
-      const newLead = {
-        id: Date.now().toString(),
+      // Save lead and sync to Supabase database
+      void dataStore.submitLead({
         type: "RESOURCE_DOWNLOAD",
         resourceId: selectedResource.id,
         resourceTitle: selectedResource.title,
         name,
         email,
         org,
-        createdAt: new Date().toISOString()
-      };
-      const currentLeads = JSON.parse(localStorage.getItem("inferno_leads") || "[]");
-      currentLeads.push(newLead);
-      localStorage.setItem("inferno_leads", JSON.stringify(currentLeads));
+        company: org,
+      });
 
       // Trigger document export
       const element = document.createElement("a");
@@ -101,7 +110,7 @@ export default function ResourcesPage() {
     }, 1200);
   };
 
-  const filteredResources = resourcesData.filter((res) => {
+  const filteredResources = resources.filter((res) => {
     const matchesCat = selectedCat === "all" || res.category === selectedCat;
     const matchesSearch =
       res.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

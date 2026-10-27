@@ -1,11 +1,38 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { dataStore, SiteSettings } from "@/utils/dataStore";
 
 export default function Footer() {
   const pathname = usePathname();
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
+
+  useEffect(() => {
+    const refreshSettings = () => setSettings(dataStore.getSiteSettings());
+    refreshSettings();
+
+    const handleStorage = (e: StorageEvent) => {
+      if (!e.key || e.key === "inferno_site_settings_v1") {
+        refreshSettings();
+      }
+    };
+    const handleCMS = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail || detail.all || detail.key === "inferno_site_settings_v1") {
+        refreshSettings();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("cms-update", handleCMS);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("cms-update", handleCMS);
+    };
+  }, []);
+
   if (pathname?.startsWith("/admin")) {
     return null;
   }
@@ -77,15 +104,14 @@ export default function Footer() {
           <h4 className="footer-title">Federal Credentials</h4>
           <div className="footer-meta text-xs space-y-1.5">
             <div>
-              <strong className="text-[var(--navy)]">UEI:</strong> QW6RHJACHA56
+              <strong className="text-[var(--navy)]">UEI:</strong> {settings?.uei || "QW6RHJACHA56"}
             </div>
             <div>
-              <strong className="text-[var(--navy)]">Cage Code:</strong> 22VP2
+              <strong className="text-[var(--navy)]">Cage Code:</strong> {settings?.cageCode || "22VP2"}
             </div>
             <div>
-              <strong className="text-[var(--navy)]">NAICS Codes:</strong>{" "}
-              541611, 541618, 541690, 624230, 561210, 562910, 238320, 561720,
-              561790, 238990, 423990, 488510, 561422
+              <strong className="text-[var(--navy)]">Primary NAICS:</strong>{" "}
+              {settings?.primaryNaics || "541611"}
             </div>
             <div className="pt-2 border-t border-[var(--border)] mt-2">
               <div className="font-semibold text-[var(--primary)] mb-1">
@@ -112,7 +138,7 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <div className="footer-copy">
-          &copy; 2026 The Inferno Group LLC. All rights reserved. &middot;{" "}
+          &copy; {new Date().getFullYear()} {settings?.companyName || "The Inferno Group LLC"}. All rights reserved. &middot;{" "}
           <Link href="/privacy">Privacy Policy</Link> &middot;{" "}
           <Link href="/conduct">Standards of Conduct</Link>
         </div>

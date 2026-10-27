@@ -9,8 +9,17 @@ export default function ConductPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setConduct(dataStore.getLegalConduct());
+    const refreshConduct = () => setConduct(dataStore.getLegalConduct());
+    refreshConduct();
     setIsMounted(true);
+
+    window.addEventListener("storage", refreshConduct);
+    window.addEventListener("cms-update", refreshConduct);
+
+    return () => {
+      window.removeEventListener("storage", refreshConduct);
+      window.removeEventListener("cms-update", refreshConduct);
+    };
   }, []);
 
   if (!isMounted || !conduct) {

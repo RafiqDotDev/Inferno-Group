@@ -26,12 +26,24 @@ export default function JobDetailsPage() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
-    const list = dataStore.getJobs();
-    const found = list.find((j) => j.id === jobId);
-    if (found) {
-      setJob(found);
-    }
+    const refreshJob = () => {
+      const list = dataStore.getJobs();
+      const found = list.find((j) => j.id === jobId);
+      if (found) {
+        setJob(found);
+      }
+    };
+
+    refreshJob();
     setIsMounted(true);
+
+    window.addEventListener("storage", refreshJob);
+    window.addEventListener("cms-update", refreshJob);
+
+    return () => {
+      window.removeEventListener("storage", refreshJob);
+      window.removeEventListener("cms-update", refreshJob);
+    };
   }, [jobId]);
 
   if (!isMounted) {
@@ -107,8 +119,8 @@ export default function JobDetailsPage() {
       setIsSubmitting(false);
       setIsSuccess(true);
       
-      const newApplication = {
-        id: Date.now().toString(),
+      // Save application and sync to Supabase database
+      void dataStore.submitLead({
         type: "APPLICATION",
         jobId: job.id,
         jobTitle: job.title,
@@ -119,12 +131,7 @@ export default function JobDetailsPage() {
         cover,
         resumeName: file ? file.name : "Resume_Document.pdf",
         resumeData: base64File || "", // Store Base64 string payload
-        createdAt: new Date().toISOString()
-      };
-      
-      const currentLeads = JSON.parse(localStorage.getItem("inferno_leads") || "[]");
-      currentLeads.push(newApplication);
-      localStorage.setItem("inferno_leads", JSON.stringify(currentLeads));
+      });
 
       // Reset
       setName("");

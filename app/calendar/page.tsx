@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { BookingSlot, generateICSContent, createGoogleCalendarUrl, createOutlookCalendarUrl } from "@/lib/calendarUtils";
+import { dataStore } from "@/utils/dataStore";
 
 export default function CalendarPage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -173,8 +174,8 @@ export default function CalendarPage() {
         meeting_type: consultType
       });
 
-      // Save backup in local storage for user offline reference
-      const bookingDetails = {
+      // Save backup in local storage and sync to Supabase database
+      void dataStore.submitLead({
         id: data.booking?.id || Date.now().toString(),
         type: "BOOKING",
         name,
@@ -185,11 +186,7 @@ export default function CalendarPage() {
         date: selectedDate.toLocaleDateString(),
         time: formatSlotTime(selectedSlotObj.start_time, timezone),
         notes,
-        createdAt: new Date().toISOString()
-      };
-      const currentLeads = JSON.parse(localStorage.getItem("inferno_leads") || "[]");
-      currentLeads.push(bookingDetails);
-      localStorage.setItem("inferno_leads", JSON.stringify(currentLeads));
+      });
 
       // Reset form fields
       setName("");

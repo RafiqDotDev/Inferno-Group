@@ -116,20 +116,33 @@ export default function HomeClient() {
   });
 
   useEffect(() => {
-    // Fetch latest 3 published articles
-    const list = dataStore
-      .getArticles()
-      .filter((a) => a.status === "published")
-      .slice(0, 3);
-    setArticles(list);
+    const refreshData = () => {
+      const list = dataStore
+        .getArticles()
+        .filter((a) => a.status === "published")
+        .slice(0, 3);
+      setArticles(list);
+      setAiFeatures(dataStore.getAIInnovation());
+      setAbout(dataStore.getAbout());
+      setHero(dataStore.getHero());
+      setCommunityStories(
+        dataStore.getCommunityStories().filter((s) => s.status === "published")
+      );
+    };
 
-    setAiFeatures(dataStore.getAIInnovation());
-    setAbout(dataStore.getAbout());
-    setHero(dataStore.getHero());
-    setCommunityStories(
-      dataStore.getCommunityStories().filter((s) => s.status === "published"),
-    );
+    refreshData();
     setIsMounted(true);
+
+    const handleStorage = () => refreshData();
+    const handleCMS = () => refreshData();
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("cms-update", handleCMS);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("cms-update", handleCMS);
+    };
   }, []);
 
   // Show quiz trigger icon after initial mount delay
@@ -466,8 +479,8 @@ export default function HomeClient() {
                   Veteran-Led &middot; Mission-Focused
                 </div>
                 <p className="text-xs text-[var(--text-muted)] leading-[1.5] mt-1">
-                  Supporting public and commercial supplier diversity goals
-                  with disciplined, veteran-led execution.
+                  Supporting public and commercial supplier diversity goals with
+                  disciplined, veteran-led execution.
                 </p>
               </div>
             </div>
@@ -519,9 +532,9 @@ export default function HomeClient() {
                   Emergency Management &amp; Disaster Recovery
                 </h3>
                 <p className="text-[var(--text-muted)] text-[0.92rem] leading-[1.7] mb-6">
-                  24/7 disaster response, FEMA Public &amp; Individual Assistance,
-                  Category A debris monitoring, Stafford Act audit compliance, and
-                  rapid field cadre deployment.
+                  24/7 disaster response, FEMA Public &amp; Individual
+                  Assistance, Category A debris monitoring, Stafford Act audit
+                  compliance, and rapid field cadre deployment.
                 </p>
 
                 <div className="space-y-2.5 mb-8">
@@ -1033,16 +1046,6 @@ export default function HomeClient() {
                         {
                           label: "Award Ceremony",
                           src: "/scholarship_ceremony.png",
-                          fallback: "/impact_debris.png",
-                        },
-                        {
-                          label: "Recipients",
-                          src: "/scholarship_recipients.png",
-                          fallback: "/logo.jpeg",
-                        },
-                        {
-                          label: "Book Grants",
-                          src: "/scholarship_handout.png",
                           fallback: "/impact_debris.png",
                         },
                       ].map((thumb, idx) => (

@@ -76,8 +76,17 @@ export default function AnimatedStats() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setStats(dataStore.getStats());
+    const refreshStats = () => setStats(dataStore.getStats());
+    refreshStats();
     setIsMounted(true);
+
+    window.addEventListener("storage", refreshStats);
+    window.addEventListener("cms-update", refreshStats);
+
+    return () => {
+      window.removeEventListener("storage", refreshStats);
+      window.removeEventListener("cms-update", refreshStats);
+    };
   }, []);
 
   if (!isMounted || stats.length === 0) {

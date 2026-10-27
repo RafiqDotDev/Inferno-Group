@@ -4,10 +4,12 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import RevealOnMount from "@/components/RevealOnMount";
 import { capabilitiesData } from "@/lib/capabilitiesData";
+import { dataStore } from "@/utils/dataStore";
 
 export default function CapabilitiesPage() {
   const [activeTab, setActiveTab] = useState("hubzone");
   const [isMounted, setIsMounted] = useState(false);
+  const [caps, setCaps] = useState<Capability[]>(capabilitiesData);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   // Email Gate Modal States
@@ -19,10 +21,25 @@ export default function CapabilitiesPage() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
+    const refreshCaps = () => {
+      const stored = dataStore.getCapabilities();
+      if (stored.length > 0) {
+        setCaps(stored);
+      }
+    };
+    refreshCaps();
     const timer = setTimeout(() => {
       setIsMounted(true);
     }, 50);
-    return () => clearTimeout(timer);
+
+    window.addEventListener("storage", refreshCaps);
+    window.addEventListener("cms-update", refreshCaps);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("storage", refreshCaps);
+      window.removeEventListener("cms-update", refreshCaps);
+    };
   }, []);
 
   const handleCopy = (text: string, label: string) => {
@@ -31,7 +48,7 @@ export default function CapabilitiesPage() {
     setTimeout(() => setCopiedCode(null), 2500);
   };
 
-  const activeCap = capabilitiesData.find((cap) => cap.id === activeTab) || capabilitiesData[0];
+  const activeCap = caps.find((cap) => cap.id === activeTab) || caps[0] || capabilitiesData[0];
 
   const naicsList = [
     { code: "541611", title: "Admin & General Management Consulting (Primary)" },
@@ -57,18 +74,14 @@ export default function CapabilitiesPage() {
       setIsSubmitting(false);
       setIsSuccess(true);
       
-      // Save lead to localStorage
-      const newLead = {
-        id: Date.now().toString(),
-        type: "DOWNLOAD",
+      // Save lead and sync to Supabase database
+      void dataStore.submitLead({
+        type: "CAPABILITY_DOWNLOAD",
         name,
         email,
         org,
-        createdAt: new Date().toISOString()
-      };
-      const currentLeads = JSON.parse(localStorage.getItem("inferno_leads") || "[]");
-      currentLeads.push(newLead);
-      localStorage.setItem("inferno_leads", JSON.stringify(currentLeads));
+        company: org,
+      });
       
       // Trigger client-side download representing Capability Statement
       const element = document.createElement("a");
@@ -217,7 +230,7 @@ export default function CapabilitiesPage() {
         <div className={`caps-layout reveal ${isMounted ? "active" : ""}`}>
           {/* Left side: Badge Selector Grid */}
           <div className="badge-grid" id="cert-badge-grid">
-            {capabilitiesData.map((cap) => (
+            {caps.map((cap) => (
               <button
                 key={cap.id}
                 className={`badge-button ${activeTab === cap.id ? "active" : ""}`}

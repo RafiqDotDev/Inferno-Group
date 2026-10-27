@@ -4,18 +4,38 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import RevealOnMount from "@/components/RevealOnMount";
 import { faqData } from "@/lib/faqData";
+import { dataStore } from "@/utils/dataStore";
 
 export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [isMounted, setIsMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [items, setItems] = useState<PageFAQItem[]>(faqData);
 
   useEffect(() => {
+    const refreshFaqs = () => {
+      const stored = dataStore
+        .getFAQs()
+        .filter((f) => f.status === "published");
+      if (stored.length > 0) {
+        setItems(stored);
+      }
+    };
+
+    refreshFaqs();
     const timer = setTimeout(() => {
       setIsMounted(true);
     }, 50);
-    return () => clearTimeout(timer);
+
+    window.addEventListener("storage", refreshFaqs);
+    window.addEventListener("cms-update", refreshFaqs);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("storage", refreshFaqs);
+      window.removeEventListener("cms-update", refreshFaqs);
+    };
   }, []);
 
   const toggleAccordion = (index: number) => {
@@ -35,7 +55,7 @@ export default function FAQPage() {
     { id: "community", label: "Inferno Cares" },
   ];
 
-  const filteredFAQ = faqData.filter((item) => {
+  const filteredFAQ = items.filter((item) => {
     const matchesCategory =
       selectedCategory === "all" || item.category === selectedCategory;
     const matchesSearch =

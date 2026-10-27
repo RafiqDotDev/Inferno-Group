@@ -3,6 +3,7 @@ import Navbar from "@/components/Layouts/Navbar";
 import Footer from "@/components/Layouts/Footer";
 import Chatbot from "@/components/Chatbot";
 import TrackerAlert from "@/components/TrackerAlert";
+import CMSRealtimeProvider from "@/components/CMSRealtimeProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -38,6 +39,7 @@ export default function RootLayout({
           while Tailwind was unwired; leaving them would switch body to flex and
           move the footer on short pages, so they are intentionally omitted. */}
       <body>
+        <CMSRealtimeProvider />
         {/* BACKGROUND OVERLAYS */}
         <div className="grid-bg"></div>
         <div className="glow-spotlight spotlight-1"></div>

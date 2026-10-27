@@ -33,17 +33,22 @@ export default function ServicesPage() {
   }, [servicesData, filterCategory]);
 
   useEffect(() => {
-    const list = dataStore.getServices().filter((s) => s.status === "published");
-    setServicesData(list);
-    if (list.length > 0) {
-      setActiveServiceId(list[0].id);
-    }
+    const refreshServices = () => {
+      const list = dataStore.getServices().filter((s) => s.status === "published");
+      setServicesData(list);
+      if (list.length > 0) {
+        setActiveServiceId((prev) => prev || list[0].id);
+      }
+    };
+
+    refreshServices();
     
     const timer = setTimeout(() => {
       setIsMounted(true);
     }, 50);
 
     const handleScroll = () => {
+      const list = dataStore.getServices().filter((s) => s.status === "published");
       if (list.length === 0) return;
       let currentId = list[0].id;
       let minDistance = Infinity;
@@ -66,11 +71,15 @@ export default function ServicesPage() {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("storage", refreshServices);
+    window.addEventListener("cms-update", refreshServices);
     // Initial check
     handleScroll();
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("storage", refreshServices);
+      window.removeEventListener("cms-update", refreshServices);
       clearTimeout(timer);
     };
   }, []);

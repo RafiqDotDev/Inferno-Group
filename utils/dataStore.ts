@@ -3,6 +3,59 @@
 // Dynamic Data Store for The Inferno Group LLC B2G Portal
 // Synced with LocalStorage and safely handles Next.js SSG build rendering.
 
+import { faqData } from "@/lib/faqData";
+import { contractsData } from "@/lib/contractsData";
+import { capabilitiesData } from "@/lib/capabilitiesData";
+import { resourcesData } from "@/lib/resourcesData";
+import { knowledgeBase, KnowledgeBaseItem } from "@/lib/chatbotData";
+import { partnerCardsData } from "@/lib/partnerCardsData";
+import { quizQuestions } from "@/lib/quizQuestions";
+
+export type { KnowledgeBaseItem };
+
+export interface AdminLead {
+  id: string;
+  type: string;
+  name?: string;
+  contactName?: string;
+  email?: string;
+  contactEmail?: string;
+  phone?: string;
+  org?: string;
+  company?: string;
+  partnerCompany?: string;
+  service?: string;
+  message?: string;
+  notes?: string;
+  reviewNotes?: string;
+  jobId?: string;
+  jobTitle?: string;
+  targetEmail?: string;
+  cover?: string;
+  resumeName?: string;
+  resumeData?: string;
+  solicitation?: string;
+  contractTitle?: string;
+  agency?: string;
+  teamingRole?: string;
+  uei?: string;
+  naics?: string;
+  partnerType?: string;
+  certStatus?: string;
+  bondingCapacity?: string;
+  consultType?: string;
+  timezone?: string;
+  date?: string;
+  time?: string;
+  answers?: Record<string, string>;
+  recommendations?: string[];
+  resourceId?: string;
+  resourceTitle?: string;
+  status?: "new" | "reviewed" | "contacted" | "archived";
+  adminNotes?: string;
+  createdAt: string;
+}
+
 export interface ValueItem {
   title: string;
   desc: string;
@@ -140,7 +193,75 @@ export interface HeroData {
   ctaLink2: string;
 }
 
+export interface SiteSettings {
+  companyName: string;
+  phone: string;
+  emergencyHotline: string;
+  emergencyBannerActive: boolean;
+  emergencyBannerMessage: string;
+  contactEmail: string;
+  careersEmail: string;
+  communityEmail: string;
+  address: string;
+  coordinationWindow: string;
+  uei: string;
+  cageCode: string;
+  primaryNaics: string;
+  linkedinUrl: string;
+  twitterUrl: string;
+}
+
+export interface PartnerCardItem {
+  id: string;
+  badge: string;
+  title: string;
+  desc: string;
+  status: "draft" | "published";
+}
+
+export interface QuizQuestionItem {
+  id: string;
+  text: string;
+  description: string;
+  options: { label: string; value: string }[];
+  status: "draft" | "published";
+}
+
 // ── DEFAULT INITIAL SEEDS ──
+
+const defaultSiteSettings: SiteSettings = {
+  companyName: "The Inferno Group LLC",
+  phone: "(407) 555-0199",
+  emergencyHotline: "1-800-555-TIG1",
+  emergencyBannerActive: false,
+  emergencyBannerMessage: "ACTIVE EMERGENCY DIRECTIVE: Emergency Incident Response Cadre stands ready for rapid nationwide deployment.",
+  contactEmail: "Contact@theinfernogroup.com",
+  careersEmail: "Jobs@theinfernogroup.com",
+  communityEmail: "InfernoCares@theinfernogroup.com",
+  address: "Orlando, Florida (Nationwide Deployments)",
+  coordinationWindow: "Response within 12 business hours",
+  uei: "22VP2",
+  cageCode: "8XYZ1",
+  primaryNaics: "541611",
+  linkedinUrl: "https://linkedin.com",
+  twitterUrl: "https://x.com",
+};
+
+const defaultPartnerCards: PartnerCardItem[] = partnerCardsData.map((p, idx) => ({
+  id: `partner-${idx + 1}`,
+  badge: p.badge,
+  title: p.title,
+  desc: p.desc,
+  status: "published",
+}));
+
+const defaultQuizQuestions: QuizQuestionItem[] = quizQuestions.map((q) => ({
+  id: q.id,
+  text: q.text,
+  description: q.description,
+  options: q.options,
+  status: "published",
+}));
 
 const defaultAbout: AboutData = {
   story: `The Inferno Group was founded on a simple belief: meaningful impact begins with action.
@@ -1159,42 +1280,13 @@ const defaultJobs: Job[] = [
   },
 ];
 
-const defaultFAQ: FAQItem[] = [
-  {
-    id: "faq-1",
-    question:
-      "What is your core focus within emergency management and disaster recovery?",
-    answer:
-      "We handle FEMA Public Assistance (PA) documentation, Individual Assistance (IA) survivor support, debris monitoring, and EOC operations to keep recovery programs compliant and audit-ready.",
-    category: "emergency",
-    status: "published",
-  },
-  {
-    id: "faq-2",
-    question: "How does your advisory support small businesses?",
-    answer:
-      "We partner with independent and small businesses on strategic planning, operational scaling, commercial revenue diversification, and government contract readiness.",
-    category: "contracting",
-    status: "published",
-  },
-  {
-    id: "faq-3",
-    question:
-      "Are you open to joint ventures or teaming agreements as a subcontractor?",
-    answer:
-      "Yes. We actively team with primes and subcontractors, bringing SBA HUBZone and VOSB socioeconomic value alongside deployable field cadres.",
-    category: "partnership",
-    status: "published",
-  },
-  {
-    id: "faq-4",
-    question: "How does DCAA compliance advisory benefit B2G contractors?",
-    answer:
-      "We structure compliant charts of accounts, indirect rates (Fringe, Overhead, G&A), and financial controls that withstand rigorous DCAA and federal audits.",
-    category: "compliance",
-    status: "published",
-  },
-];
+const defaultFAQ: FAQItem[] = faqData.map((item, idx) => ({
+  id: `faq-${idx + 1}`,
+  question: item.question,
+  answer: item.answer,
+  category: item.category,
+  status: "published" as const,
+}));
 
 const defaultPrivacy: LegalPage = {
   id: "privacy",
@@ -1346,6 +1438,55 @@ function getStoreItem<T>(key: string, defaultValue: T): T {
 function setStoreItem<T>(key: string, value: T): void {
   if (typeof window !== "undefined") {
     localStorage.setItem(key, JSON.stringify(value));
+    // Immediately notify local components listening in the same window/tab
+    window.dispatchEvent(new CustomEvent("cms-update", { detail: { key, value } }));
+    try {
+      window.dispatchEvent(new StorageEvent("storage", { key }));
+    } catch {
+      window.dispatchEvent(new Event("storage"));
+    }
+
+    // Signal auto-sync in progress to admin dashboard
+    window.dispatchEvent(
+      new CustomEvent("cms-sync-state", {
+        detail: { status: "syncing", key },
+      })
+    );
+
+    // Asynchronously push to Supabase /api/cms without blocking UI
+    try {
+      fetch("/api/cms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value }),
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            window.dispatchEvent(
+              new CustomEvent("cms-sync-state", {
+                detail: { status: "synced", key, timestamp: Date.now() },
+              })
+            );
+          } else {
+            console.warn(`[Supabase Sync] Non-200 push response for ${key}:`, res.status);
+            window.dispatchEvent(
+              new CustomEvent("cms-sync-state", {
+                detail: { status: "error", key },
+              })
+            );
+          }
+        })
+        .catch((err) => {
+          console.warn(`[Supabase Sync] Non-blocking push notice for ${key}:`, err);
+          window.dispatchEvent(
+            new CustomEvent("cms-sync-state", {
+              detail: { status: "error", key },
+            })
+          );
+        });
+    } catch {
+      // offline/SSG safe
+    }
   }
 }
 
@@ -1415,9 +1556,39 @@ export const dataStore = {
 
   // FAQs
   getFAQs: (): FAQItem[] =>
-    getStoreItem<FAQItem[]>("inferno_faqs_v2", defaultFAQ),
+    getStoreItem<FAQItem[]>("inferno_faqs_v3", defaultFAQ),
   saveFAQs: (faqs: FAQItem[]): void =>
-    setStoreItem<FAQItem[]>("inferno_faqs_v2", faqs),
+    setStoreItem<FAQItem[]>("inferno_faqs_v3", faqs),
+
+  // Contracts
+  getContracts: (): Contract[] =>
+    getStoreItem<Contract[]>("inferno_contracts_v1", contractsData),
+  saveContracts: (contracts: Contract[]): void =>
+    setStoreItem<Contract[]>("inferno_contracts_v1", contracts),
+
+  // Capabilities
+  getCapabilities: (): Capability[] =>
+    getStoreItem<Capability[]>("inferno_capabilities_v1", capabilitiesData),
+  saveCapabilities: (capabilities: Capability[]): void =>
+    setStoreItem<Capability[]>("inferno_capabilities_v1", capabilities),
+
+  // Resources
+  getResources: (): Resource[] =>
+    getStoreItem<Resource[]>("inferno_resources_v1", resourcesData),
+  saveResources: (resources: Resource[]): void =>
+    setStoreItem<Resource[]>("inferno_resources_v1", resources),
+
+  // Chatbot Q&A
+  getChatbotQA: (): KnowledgeBaseItem[] =>
+    getStoreItem<KnowledgeBaseItem[]>("inferno_chatbot_qa_v1", knowledgeBase),
+  saveChatbotQA: (qa: KnowledgeBaseItem[]): void =>
+    setStoreItem<KnowledgeBaseItem[]>("inferno_chatbot_qa_v1", qa),
+
+  // Leads & Inbound Submissions
+  getLeads: (): AdminLead[] =>
+    getStoreItem<AdminLead[]>("inferno_leads", []),
+  saveLeads: (leads: AdminLead[]): void =>
+    setStoreItem<AdminLead[]>("inferno_leads", leads),
 
   // Legal Pages
   getLegalPrivacy: (): LegalPage =>
@@ -1435,4 +1606,274 @@ export const dataStore = {
     getStoreItem<HeroData>("inferno_hero_v5", defaultHero),
   saveHero: (hero: HeroData): void =>
     setStoreItem<HeroData>("inferno_hero_v5", hero),
+
+  // Site & Brand Settings
+  getSiteSettings: (): SiteSettings =>
+    getStoreItem<SiteSettings>("inferno_site_settings_v1", defaultSiteSettings),
+  saveSiteSettings: (settings: SiteSettings): void =>
+    setStoreItem<SiteSettings>("inferno_site_settings_v1", settings),
+
+  // Partnerships & Teaming Cards
+  getPartnerCards: (): PartnerCardItem[] =>
+    getStoreItem<PartnerCardItem[]>("inferno_partner_cards_v1", defaultPartnerCards),
+  savePartnerCards: (cards: PartnerCardItem[]): void =>
+    setStoreItem<PartnerCardItem[]>("inferno_partner_cards_v1", cards),
+
+  // Diagnostic Quiz Questions
+  getQuizQuestions: (): QuizQuestionItem[] =>
+    getStoreItem<QuizQuestionItem[]>("inferno_quiz_questions_v1", defaultQuizQuestions),
+  saveQuizQuestions: (questions: QuizQuestionItem[]): void =>
+    setStoreItem<QuizQuestionItem[]>("inferno_quiz_questions_v1", questions),
+
+  // Reset all CMS collections to factory defaults
+  resetAllToDefaults: (): void => {
+    if (typeof window === "undefined") return;
+    setStoreItem("inferno_about_v4", defaultAbout);
+    setStoreItem("inferno_team_v7", defaultTeam);
+    setStoreItem("inferno_services_v5", defaultServices);
+    setStoreItem("inferno_stats_v3", defaultStats);
+    setStoreItem("inferno_testimonials_v5", defaultTestimonials);
+    setStoreItem("inferno_community_v6", defaultCommunityStories);
+    setStoreItem("inferno_articles_v5", defaultArticles);
+    setStoreItem("inferno_ai_innovation_v2", defaultAIInnovation);
+    setStoreItem("inferno_jobs_v5", defaultJobs);
+    setStoreItem("inferno_faqs_v3", defaultFAQ);
+    setStoreItem("inferno_contracts_v1", contractsData);
+    setStoreItem("inferno_capabilities_v1", capabilitiesData);
+    setStoreItem("inferno_resources_v1", resourcesData);
+    setStoreItem("inferno_chatbot_qa_v1", knowledgeBase);
+    setStoreItem("inferno_legal_privacy_v2", defaultPrivacy);
+    setStoreItem("inferno_legal_conduct_v2", defaultConduct);
+    setStoreItem("inferno_hero_v5", defaultHero);
+    setStoreItem("inferno_site_settings_v1", defaultSiteSettings);
+    setStoreItem("inferno_partner_cards_v1", defaultPartnerCards);
+    setStoreItem("inferno_quiz_questions_v1", defaultQuizQuestions);
+  },
+
+  // Export full CMS state snapshot
+  exportFullSnapshot: () => ({
+    exportedAt: new Date().toISOString(),
+    siteSettings: dataStore.getSiteSettings(),
+    hero: dataStore.getHero(),
+    stats: dataStore.getStats(),
+    aiInnovation: dataStore.getAIInnovation(),
+    about: dataStore.getAbout(),
+    team: dataStore.getTeam(),
+    services: dataStore.getServices(),
+    capabilities: dataStore.getCapabilities(),
+    contracts: dataStore.getContracts(),
+    partnerCards: dataStore.getPartnerCards(),
+    articles: dataStore.getArticles(),
+    jobs: dataStore.getJobs(),
+    communityStories: dataStore.getCommunityStories(),
+    testimonials: dataStore.getTestimonials(),
+    faqs: dataStore.getFAQs(),
+    resources: dataStore.getResources(),
+    quizQuestions: dataStore.getQuizQuestions(),
+    chatbotQA: dataStore.getChatbotQA(),
+    legalPrivacy: dataStore.getLegalPrivacy(),
+    legalConduct: dataStore.getLegalConduct(),
+    leads: dataStore.getLeads(),
+  }),
+
+  // Import full CMS state snapshot
+  importFullSnapshot: (snapshot: Record<string, unknown>): void => {
+    if (!snapshot || typeof snapshot !== "object") return;
+    if (snapshot.siteSettings) dataStore.saveSiteSettings(snapshot.siteSettings as SiteSettings);
+    if (snapshot.hero) dataStore.saveHero(snapshot.hero as HeroData);
+    if (Array.isArray(snapshot.stats)) dataStore.saveStats(snapshot.stats as StatItem[]);
+    if (Array.isArray(snapshot.aiInnovation)) dataStore.saveAIInnovation(snapshot.aiInnovation as FeatureCard[]);
+    if (snapshot.about) dataStore.saveAbout(snapshot.about as AboutData);
+    if (Array.isArray(snapshot.team)) dataStore.saveTeam(snapshot.team as TeamMember[]);
+    if (Array.isArray(snapshot.services)) dataStore.saveServices(snapshot.services as ServiceItem[]);
+    if (Array.isArray(snapshot.capabilities)) dataStore.saveCapabilities(snapshot.capabilities as Capability[]);
+    if (Array.isArray(snapshot.contracts)) dataStore.saveContracts(snapshot.contracts as Contract[]);
+    if (Array.isArray(snapshot.partnerCards)) dataStore.savePartnerCards(snapshot.partnerCards as PartnerCardItem[]);
+    if (Array.isArray(snapshot.articles)) dataStore.saveArticles(snapshot.articles as Article[]);
+    if (Array.isArray(snapshot.jobs)) dataStore.saveJobs(snapshot.jobs as Job[]);
+    if (Array.isArray(snapshot.communityStories)) dataStore.saveCommunityStories(snapshot.communityStories as CommunityStory[]);
+    if (Array.isArray(snapshot.testimonials)) dataStore.saveTestimonials(snapshot.testimonials as TestimonialItem[]);
+    if (Array.isArray(snapshot.faqs)) dataStore.saveFAQs(snapshot.faqs as FAQItem[]);
+    if (Array.isArray(snapshot.resources)) dataStore.saveResources(snapshot.resources as Resource[]);
+    if (Array.isArray(snapshot.quizQuestions)) dataStore.saveQuizQuestions(snapshot.quizQuestions as QuizQuestionItem[]);
+    if (Array.isArray(snapshot.chatbotQA)) dataStore.saveChatbotQA(snapshot.chatbotQA as KnowledgeBaseItem[]);
+    if (snapshot.legalPrivacy) dataStore.saveLegalPrivacy(snapshot.legalPrivacy as LegalPage);
+    if (snapshot.legalConduct) dataStore.saveLegalConduct(snapshot.legalConduct as LegalPage);
+    if (Array.isArray(snapshot.leads)) dataStore.saveLeads(snapshot.leads as AdminLead[]);
+  },
+
+  // ── SUPABASE DATABASE SYNCHRONIZATION ──
+
+  // Pull all CMS content and leads from Supabase PostgreSQL database
+  syncFromSupabase: async (): Promise<{ success: boolean; count: number }> => {
+    if (typeof window === "undefined") return { success: false, count: 0 };
+    try {
+      const res = await fetch("/api/cms");
+      if (!res.ok) return { success: false, count: 0 };
+      const json = await res.json();
+      if (json.success && json.data) {
+        const remoteData = json.data as Record<string, any>;
+        const keys = Object.keys(remoteData);
+
+        // If remote Supabase database is completely empty, initialize it with current snapshot
+        if (keys.length === 0) {
+          await dataStore.pushAllToSupabase();
+          return { success: true, count: 0 };
+        }
+
+        // Hydrate localStorage with remote values
+        for (const [k, v] of Object.entries(remoteData)) {
+          if (v !== undefined && v !== null) {
+            localStorage.setItem(k, JSON.stringify(v));
+          }
+        }
+
+        // Notify all open tabs and active React hooks
+        window.dispatchEvent(new CustomEvent("cms-update", { detail: { all: true } }));
+        try {
+          window.dispatchEvent(new StorageEvent("storage", { key: null }));
+        } catch {
+          try {
+          window.dispatchEvent(new StorageEvent("storage", { key: "inferno_leads" }));
+        } catch {
+          window.dispatchEvent(new Event("storage"));
+        }
+        }
+        return { success: true, count: keys.length };
+      }
+      return { success: false, count: 0 };
+    } catch (err) {
+      console.warn("[Supabase Sync] Sync from database error:", err);
+      return { success: false, count: 0 };
+    }
+  },
+
+  // Push complete CMS state to Supabase PostgreSQL in a single batch
+  pushAllToSupabase: async (): Promise<boolean> => {
+    if (typeof window === "undefined") return false;
+    window.dispatchEvent(
+      new CustomEvent("cms-sync-state", { detail: { status: "syncing" } })
+    );
+    try {
+      const batch = [
+        { key: "inferno_site_settings_v1", value: dataStore.getSiteSettings() },
+        { key: "inferno_partner_cards_v1", value: dataStore.getPartnerCards() },
+        { key: "inferno_quiz_questions_v1", value: dataStore.getQuizQuestions() },
+        { key: "inferno_about_v4", value: dataStore.getAbout() },
+        { key: "inferno_team_v7", value: dataStore.getTeam() },
+        { key: "inferno_services_v5", value: dataStore.getServices() },
+        { key: "inferno_stats_v3", value: dataStore.getStats() },
+        { key: "inferno_testimonials_v5", value: dataStore.getTestimonials() },
+        { key: "inferno_community_v6", value: dataStore.getCommunityStories() },
+        { key: "inferno_articles_v5", value: dataStore.getArticles() },
+        { key: "inferno_ai_innovation_v2", value: dataStore.getAIInnovation() },
+        { key: "inferno_jobs_v5", value: dataStore.getJobs() },
+        { key: "inferno_faqs_v3", value: dataStore.getFAQs() },
+        { key: "inferno_contracts_v1", value: dataStore.getContracts() },
+        { key: "inferno_capabilities_v1", value: dataStore.getCapabilities() },
+        { key: "inferno_resources_v1", value: dataStore.getResources() },
+        { key: "inferno_chatbot_qa_v1", value: dataStore.getChatbotQA() },
+        { key: "inferno_legal_privacy_v2", value: dataStore.getLegalPrivacy() },
+        { key: "inferno_legal_conduct_v2", value: dataStore.getLegalConduct() },
+        { key: "inferno_hero_v5", value: dataStore.getHero() },
+        { key: "inferno_leads", value: dataStore.getLeads() },
+      ];
+
+      const res = await fetch("/api/cms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch }),
+      });
+      if (res.ok) {
+        window.dispatchEvent(
+          new CustomEvent("cms-sync-state", {
+            detail: { status: "synced", timestamp: Date.now() },
+          })
+        );
+        return true;
+      } else {
+        window.dispatchEvent(
+          new CustomEvent("cms-sync-state", { detail: { status: "error" } })
+        );
+        return false;
+      }
+    } catch (err) {
+      console.warn("[Supabase Sync] Batch push error:", err);
+      window.dispatchEvent(
+        new CustomEvent("cms-sync-state", { detail: { status: "error" } })
+      );
+      return false;
+    }
+  },
+
+  // Submit a lead transmission: immediate local storage + background sync to Supabase
+  submitLead: async (lead: Partial<AdminLead>): Promise<AdminLead> => {
+    const newLead: AdminLead = {
+      id: lead.id || `lead-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      type: lead.type || "contact",
+      name: lead.name || lead.contactName || "Portal Inquirer",
+      contactName: lead.contactName || lead.name,
+      email: lead.email || lead.contactEmail || "",
+      contactEmail: lead.contactEmail || lead.email,
+      phone: lead.phone || "",
+      company: lead.company || lead.org || lead.partnerCompany || "",
+      partnerCompany: lead.partnerCompany || lead.company,
+      org: lead.org || lead.company,
+      service: lead.service || "",
+      message: lead.message || lead.notes || "",
+      notes: lead.notes || lead.message || "",
+      jobId: lead.jobId,
+      jobTitle: lead.jobTitle,
+      cover: lead.cover,
+      resumeName: lead.resumeName,
+      resumeData: lead.resumeData,
+      solicitation: lead.solicitation,
+      contractTitle: lead.contractTitle,
+      agency: lead.agency,
+      teamingRole: lead.teamingRole,
+      partnerType: lead.partnerType,
+      certStatus: lead.certStatus,
+      bondingCapacity: lead.bondingCapacity,
+      consultType: lead.consultType,
+      timezone: lead.timezone,
+      date: lead.date,
+      time: lead.time,
+      answers: lead.answers,
+      recommendations: lead.recommendations,
+      resourceId: lead.resourceId,
+      resourceTitle: lead.resourceTitle,
+      status: lead.status || "new",
+      adminNotes: lead.adminNotes || "",
+      createdAt: lead.createdAt || new Date().toISOString(),
+    };
+
+    // 1. Immediately store in local storage for zero latency
+    if (typeof window !== "undefined") {
+      try {
+        const current = dataStore.getLeads();
+        const updated = [newLead, ...current.filter((l) => l.id !== newLead.id)];
+        localStorage.setItem("inferno_leads", JSON.stringify(updated));
+        try {
+          window.dispatchEvent(new StorageEvent("storage", { key: "inferno_leads" }));
+        } catch {
+          window.dispatchEvent(new Event("storage"));
+        }
+      } catch {
+        // ignore storage error
+      }
+    }
+
+    // 2. Persist to Supabase database via API
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newLead),
+      });
+    } catch (err) {
+      console.warn("[Supabase Sync] Failed to post lead to database:", err);
+    }
+
+    return newLead;
+  },
 };

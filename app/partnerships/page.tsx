@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import RevealOnMount from "@/components/RevealOnMount";
-import { partnerCardsData } from "@/lib/partnerCardsData";
+import { dataStore, PartnerCardItem } from "@/utils/dataStore";
 
 export default function PartnershipsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [partnerCards, setPartnerCards] = useState<PartnerCardItem[]>([]);
 
   // Form states
   const [company, setCompany] = useState("");
@@ -24,10 +25,34 @@ export default function PartnershipsPage() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
+    const refreshCards = () => {
+      setPartnerCards(dataStore.getPartnerCards().filter((c) => c.status === "published"));
+    };
+
+    refreshCards();
     const timer = setTimeout(() => {
       setIsMounted(true);
     }, 50);
-    return () => clearTimeout(timer);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (!e.key || e.key === "inferno_partner_cards_v1") {
+        refreshCards();
+      }
+    };
+    const handleCMS = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail || detail.all || detail.key === "inferno_partner_cards_v1") {
+        refreshCards();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("cms-update", handleCMS);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("cms-update", handleCMS);
+    };
   }, []);
 
   const handlePartnerSubmit = (e: React.FormEvent) => {
@@ -38,13 +63,15 @@ export default function PartnershipsPage() {
       setIsSubmitting(false);
       setIsSuccess(true);
 
-      // Save lead to localStorage
-      const newLead = {
-        id: Date.now().toString(),
+      // Save lead and sync to Supabase database
+      void dataStore.submitLead({
         type: "PARTNER",
         company,
+        partnerCompany: company,
         contactName,
+        name: contactName,
         email,
+        contactEmail: email,
         phone,
         uei,
         naics,
@@ -52,13 +79,7 @@ export default function PartnershipsPage() {
         certStatus,
         bondingCapacity,
         message,
-        createdAt: new Date().toISOString(),
-      };
-      const currentLeads = JSON.parse(
-        localStorage.getItem("inferno_leads") || "[]",
-      );
-      currentLeads.push(newLead);
-      localStorage.setItem("inferno_leads", JSON.stringify(currentLeads));
+      });
 
       setTimeout(() => {
         setIsModalOpen(false);
@@ -119,7 +140,7 @@ export default function PartnershipsPage() {
 
         {/* 4 Teaming Pillars */}
         <div className={`partner-grid reveal ${isMounted ? "active" : ""}`}>
-          {partnerCardsData.map((card, index) => (
+          {partnerCards.map((card, index) => (
             <div
               key={index}
               className="partner-card flex flex-col justify-between h-full p-8 bg-[var(--glass)] border border-[var(--border)] rounded-[24px] hover:border-[var(--primary)] transition-all duration-300 shadow-sm hover:shadow-md"

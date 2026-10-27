@@ -20,11 +20,22 @@ export default function TestimonialsCarousel() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Get published testimonials
-    const all = dataStore.getTestimonials();
-    const published = all.filter((t) => t.status === "published");
-    setTestimonials(published);
+    const refreshTestimonials = () => {
+      const all = dataStore.getTestimonials();
+      const published = all.filter((t) => t.status === "published");
+      setTestimonials(published);
+    };
+
+    refreshTestimonials();
     setIsMounted(true);
+
+    window.addEventListener("storage", refreshTestimonials);
+    window.addEventListener("cms-update", refreshTestimonials);
+
+    return () => {
+      window.removeEventListener("storage", refreshTestimonials);
+      window.removeEventListener("cms-update", refreshTestimonials);
+    };
   }, []);
 
   const resetTimeout = () => {

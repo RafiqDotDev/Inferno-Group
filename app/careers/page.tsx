@@ -15,8 +15,20 @@ export default function CareersPage() {
   const itemsPerPage = 6;
 
   useEffect(() => {
-    setJobs(dataStore.getJobs().filter((j) => j.status === "published"));
+    const refreshJobs = () => {
+      setJobs(dataStore.getJobs().filter((j) => j.status === "published"));
+    };
+
+    refreshJobs();
     setIsMounted(true);
+
+    window.addEventListener("storage", refreshJobs);
+    window.addEventListener("cms-update", refreshJobs);
+
+    return () => {
+      window.removeEventListener("storage", refreshJobs);
+      window.removeEventListener("cms-update", refreshJobs);
+    };
   }, []);
 
   const filteredJobs = jobs.filter((job) => {

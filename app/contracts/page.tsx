@@ -4,9 +4,11 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import RevealOnMount from "@/components/RevealOnMount";
 import { contractsData } from "@/lib/contractsData";
+import { dataStore } from "@/utils/dataStore";
 
 export default function ContractsPage() {
   const [isMounted, setIsMounted] = useState(false);
+  const [contracts, setContracts] = useState<Contract[]>(contractsData);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNaics, setSelectedNaics] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,11 +31,24 @@ export default function ContractsPage() {
   const itemsPerPage = 4;
 
   useEffect(() => {
+    const refreshContracts = () => {
+      setContracts(dataStore.getContracts());
+      setLastRefreshed(new Date().toLocaleTimeString());
+    };
+
+    refreshContracts();
     const timer = setTimeout(() => {
       setIsMounted(true);
-      setLastRefreshed(new Date().toLocaleTimeString());
     }, 50);
-    return () => clearTimeout(timer);
+
+    window.addEventListener("storage", refreshContracts);
+    window.addEventListener("cms-update", refreshContracts);
+
+    return () => {
+      window.removeEventListener("storage", refreshContracts);
+      window.removeEventListener("cms-update", refreshContracts);
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleRefresh = () => {
@@ -57,25 +72,22 @@ export default function ContractsPage() {
       setIsSubmitting(false);
       setIsSuccess(true);
 
-      const lead = {
-        id: Date.now().toString(),
+      // Save teaming lead and sync to Supabase database
+      void dataStore.submitLead({
         type: "CONTRACT_REVIEW",
         solicitation: selectedContract?.solicitation,
         contractTitle: selectedContract?.title,
         agency: selectedContract?.agency,
         partnerCompany,
+        company: partnerCompany,
         contactName,
+        name: contactName,
         contactEmail,
+        email: contactEmail,
         teamingRole,
+        notes: reviewNotes,
         reviewNotes,
-        createdAt: new Date().toISOString(),
-      };
-
-      const currentLeads = JSON.parse(
-        localStorage.getItem("inferno_leads") || "[]",
-      );
-      currentLeads.push(lead);
-      localStorage.setItem("inferno_leads", JSON.stringify(currentLeads));
+      });
 
       setTimeout(() => {
         setIsModalOpen(false);
@@ -89,7 +101,7 @@ export default function ContractsPage() {
     }, 1200);
   };
 
-  const filteredContracts = contractsData.filter((contract) => {
+  const filteredContracts = contracts.filter((contract) => {
     const matchesNaics =
       selectedNaics === "all" || contract.naics === selectedNaics;
     const matchesSearch =
