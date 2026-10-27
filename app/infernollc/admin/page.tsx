@@ -924,7 +924,7 @@ export default function AdminPage() {
     setAuthError(null);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(authEmail, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/admin?mode=reset`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/infernollc/admin?mode=reset`,
       });
       if (error) throw error;
       setResetSuccess(true);

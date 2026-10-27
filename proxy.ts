@@ -32,7 +32,9 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isProtectedAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  const isProtectedAdminRoute =
+    request.nextUrl.pathname.startsWith("/admin") ||
+    request.nextUrl.pathname.startsWith("/infernollc/admin");
 
   if (isProtectedAdminRoute) {
     // If user is not authenticated or email is unverified, flag for client or redirect appropriately
@@ -50,6 +52,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
+    "/infernollc/admin/:path*",
     "/api/:path*",
     "/auth/:path*",
   ],

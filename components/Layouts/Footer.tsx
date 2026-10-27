@@ -33,7 +33,7 @@ export default function Footer() {
     };
   }, []);
 
-  if (pathname?.startsWith("/admin")) {
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/infernollc/admin")) {
     return null;
   }
   return (

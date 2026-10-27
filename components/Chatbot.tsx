@@ -61,7 +61,7 @@ export default function Chatbot() {
     }
   }, [messages, isTyping]);
 
-  if (pathname?.startsWith("/admin")) {
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/infernollc/admin")) {
     return null;
   }
 
