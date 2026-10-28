@@ -206,6 +206,7 @@ export interface Job {
   responsibilities: string[];
   requirements: string[];
   postedDate: string;
+  lastDate?: string;
   status: "draft" | "published";
 }
 
@@ -817,6 +818,7 @@ const defaultJobs: Job[] = [
       "Ability to work in a fast-paced, deadline-driven environment.",
       "FEMA, Individual Assistance, housing recovery, or human services experience is a plus.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-01",
     status: "published",
   },
@@ -850,6 +852,7 @@ const defaultJobs: Job[] = [
       "Previous disaster response, construction, inspection, public works, logistics, or debris monitoring experience preferred.",
       "FEMA debris management training is a plus.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-02",
     status: "published",
   },
@@ -884,6 +887,7 @@ const defaultJobs: Job[] = [
       "Advanced Excel skills and experience with accounting or ERP platforms.",
       "CPA, CMA, MBA, or similar advanced credential is preferred but not required.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-03",
     status: "published",
   },
@@ -916,6 +920,7 @@ const defaultJobs: Job[] = [
       "Proficiency with Microsoft Office and web-based applications.",
       "Government program or disaster recovery experience is a plus.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-04",
     status: "published",
   },
@@ -948,6 +953,7 @@ const defaultJobs: Job[] = [
       "Ability to manage competing priorities in a high-volume environment.",
       "Government, emergency management, or disaster recovery program experience is a plus.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-05",
     status: "published",
   },
@@ -981,6 +987,7 @@ const defaultJobs: Job[] = [
       "Ability to supervise remote or distributed teams.",
       "Government contracting or disaster recovery program experience is highly desirable.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-06",
     status: "published",
   },
@@ -1015,6 +1022,7 @@ const defaultJobs: Job[] = [
       "Government, contact center, emergency management, or disaster recovery experience preferred.",
       "Instructional design or training certification is a plus.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-07",
     status: "published",
   },
@@ -1048,6 +1056,7 @@ const defaultJobs: Job[] = [
       "Ability to manage remote or hybrid employees.",
       "Disaster recovery or government contact center experience is a plus.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-08",
     status: "published",
   },
@@ -1081,6 +1090,7 @@ const defaultJobs: Job[] = [
       "Ability to prioritize multiple assignments independently.",
       "Professional judgment and ability to handle confidential information.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-09",
     status: "published",
   },
@@ -1113,6 +1123,7 @@ const defaultJobs: Job[] = [
       "Reliable attendance and ability to work assigned schedules.",
       "Bilingual capabilities are a plus.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-10",
     status: "published",
   },
@@ -1146,6 +1157,7 @@ const defaultJobs: Job[] = [
       "Ability to manage high-volume and specialized recruiting simultaneously.",
       "Government contracting, emergency management, disaster recovery, or staffing agency experience is highly desirable.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-11",
     status: "published",
   },
@@ -1180,6 +1192,7 @@ const defaultJobs: Job[] = [
       "Strong project management, reporting, communication, and analytical skills.",
       "PMP, FEMA training, or emergency management credentials are highly desirable.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-12",
     status: "published",
   },
@@ -1215,6 +1228,7 @@ const defaultJobs: Job[] = [
       "PMP, FEMA PA training, or comparable credentials are highly desirable.",
       "Ability to travel or deploy when mission requirements dictate.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-13",
     status: "published",
   },
@@ -1249,6 +1263,7 @@ const defaultJobs: Job[] = [
       "Ability to work extended operational periods, nights, weekends, holidays, and emergency schedules.",
       "Must be able to remain assigned to the designated EOC for the duration required by the mission.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-14",
     status: "published",
   },
@@ -1283,6 +1298,7 @@ const defaultJobs: Job[] = [
       "Ability to work extended operational periods and emergency schedules.",
       "Must be able to remain assigned to the designated EOC for the duration required by the mission.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-15",
     status: "published",
   },
@@ -1318,6 +1334,7 @@ const defaultJobs: Job[] = [
       "Ability to work extended operational periods, nights, weekends, holidays, and emergency schedules.",
       "Must be able to remain assigned to the designated EOC for the duration required by the mission.",
     ],
+    lastDate: "December 15, 2026",
     postedDate: "2026-08-16",
     status: "published",
   },
@@ -1594,7 +1611,13 @@ export const dataStore = {
     setStoreItem<FeatureCard[]>("inferno_ai_innovation_v2", features),
 
   // Careers Jobs
-  getJobs: (): Job[] => getStoreItem<Job[]>("inferno_jobs_v5", defaultJobs),
+  getJobs: (): Job[] => {
+    const list = getStoreItem<Job[]>("inferno_jobs_v5", defaultJobs);
+    return list.map((j) => ({
+      ...j,
+      lastDate: j.lastDate || "December 15, 2026",
+    }));
+  },
   saveJobs: (jobs: Job[]): void => setStoreItem<Job[]>("inferno_jobs_v5", jobs),
 
   // FAQs

@@ -261,7 +261,6 @@ export default function JobApplicationForm({
   const handleNext = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
-      // Scroll smoothly to form top
       const formEl = document.getElementById("job-application-form-top");
       if (formEl) formEl.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -373,7 +372,7 @@ export default function JobApplicationForm({
         setIsSuccess(true);
         if (onSuccess) onSuccess();
       }, 400);
-    } catch (err) {
+    } catch {
       clearInterval(progressInterval);
       setIsSubmitting(false);
       setStepError("An unexpected error occurred while transmitting your application. Please try again or email Jobs@theinfernogroup.com.");
@@ -388,7 +387,7 @@ export default function JobApplicationForm({
   ];
 
   return (
-    <div id="job-application-form-top" className="relative bg-white border border-[var(--border)] rounded-2xl p-6 sm:p-8 shadow-sm">
+    <div id="job-application-form-top" className="relative bg-white border border-[var(--border)] rounded-2xl p-5 sm:p-8 shadow-sm">
       {/* Success Modal / Overlay */}
       {isSuccess && (
         <div className="absolute inset-0 bg-white/98 z-30 rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center text-center animate-fadeIn">
@@ -448,7 +447,25 @@ export default function JobApplicationForm({
         <h3 className="text-xl sm:text-2xl font-bold font-[family-name:var(--font-space-grotesk)] text-[var(--text-bright)]">
           {job.title}
         </h3>
-        <p className="text-xs text-[var(--text-muted)] mt-1">
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <span className="text-xs text-[var(--primary)] bg-orange-50 border border-orange-200 px-2.5 py-0.5 rounded-md font-semibold inline-flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Last Date: {job.lastDate || "Open Until Filled"}
+          </span>
+          {job.location && (
+            <span className="text-xs text-[var(--text-muted)] bg-gray-50 border border-[var(--border)] px-2.5 py-0.5 rounded-md font-medium inline-flex items-center gap-1">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              {job.location}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-[var(--text-muted)] mt-2">
           Complete each section below to transmit your candidate credentials to our HR &amp; Operations review team.
         </p>
       </div>
@@ -532,98 +549,98 @@ export default function JobApplicationForm({
 
         {/* ================= STEP 1: Candidate Profile & Contact ================= */}
         {currentStep === 1 && (
-          <div className="space-y-5 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-5 animate-fadeIn">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="form-group m-0">
+              <div>
+                <label htmlFor="app-legal-name" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Full Legal Name <span className="text-[var(--primary)]">*</span>
+                </label>
                 <input
                   type="text"
                   id="app-legal-name"
-                  className="form-input"
-                  placeholder=" "
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all"
+                  placeholder="e.g. Johnathan Doe"
                   value={legalName}
                   onChange={(e) => setLegalName(e.target.value)}
                   required
                 />
-                <label htmlFor="app-legal-name" className="form-label">
-                  Full Legal Name *
-                </label>
               </div>
 
-              <div className="form-group m-0">
+              <div>
+                <label htmlFor="app-pref-name" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Preferred / Alias Name <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
                 <input
                   type="text"
                   id="app-pref-name"
-                  className="form-input"
-                  placeholder=" "
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all"
+                  placeholder="e.g. John"
                   value={preferredName}
                   onChange={(e) => setPreferredName(e.target.value)}
                 />
-                <label htmlFor="app-pref-name" className="form-label">
-                  Preferred / Alias Name (Optional)
-                </label>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="form-group m-0">
+              <div>
+                <label htmlFor="app-email" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Primary Email Address <span className="text-[var(--primary)]">*</span>
+                </label>
                 <input
                   type="email"
                   id="app-email"
-                  className="form-input"
-                  placeholder=" "
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-                <label htmlFor="app-email" className="form-label">
-                  Primary Email Address *
-                </label>
               </div>
 
-              <div className="form-group m-0">
+              <div>
+                <label htmlFor="app-phone" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Telephone / Mobile <span className="text-[var(--primary)]">*</span>
+                </label>
                 <input
                   type="tel"
                   id="app-phone"
-                  className="form-input"
-                  placeholder=" "
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all"
+                  placeholder="e.g. (407) 555-0199"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
                 />
-                <label htmlFor="app-phone" className="form-label">
-                  Telephone / Mobile *
-                </label>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="form-group m-0">
+              <div>
+                <label htmlFor="app-location" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Current City, State &amp; ZIP <span className="text-[var(--primary)]">*</span>
+                </label>
                 <input
                   type="text"
                   id="app-location"
-                  className="form-input"
-                  placeholder=" "
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all"
+                  placeholder="e.g. Orlando, FL 32801"
                   value={cityStateZip}
                   onChange={(e) => setCityStateZip(e.target.value)}
                   required
                 />
-                <label htmlFor="app-location" className="form-label">
-                  Current City, State &amp; ZIP *
-                </label>
               </div>
 
-              <div className="form-group m-0">
+              <div>
+                <label htmlFor="app-linkedin" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  LinkedIn or Portfolio URL <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
                 <input
                   type="url"
                   id="app-linkedin"
-                  className="form-input"
-                  placeholder=" "
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all"
+                  placeholder="https://linkedin.com/in/username"
                   value={linkedinUrl}
                   onChange={(e) => setLinkedinUrl(e.target.value)}
                 />
-                <label htmlFor="app-linkedin" className="form-label">
-                  LinkedIn or Portfolio URL (Optional)
-                </label>
               </div>
             </div>
 
@@ -633,7 +650,7 @@ export default function JobApplicationForm({
                 <line x1="12" y1="16" x2="12" y2="12"></line>
                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
               </svg>
-              <span>
+              <span className="leading-relaxed">
                 All contact information is encrypted and strictly used by The Inferno Group LLC Human Resources for employment evaluation and dispatch communications.
               </span>
             </div>
@@ -642,16 +659,17 @@ export default function JobApplicationForm({
 
         {/* ================= STEP 2: Experience & Qualifications ================= */}
         {currentStep === 2 && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-5 animate-fadeIn">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
-                  Years of Relevant Experience *
+                <label htmlFor="app-experience-level" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Years of Relevant Experience <span className="text-[var(--primary)]">*</span>
                 </label>
                 <select
+                  id="app-experience-level"
                   value={yearsExperience}
                   onChange={(e) => setYearsExperience(e.target.value)}
-                  className="form-input form-select text-xs font-medium cursor-pointer"
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] form-select focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all cursor-pointer font-medium"
                   required
                 >
                   <option value="">-- Select Experience Level --</option>
@@ -664,13 +682,14 @@ export default function JobApplicationForm({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
-                  Highest Level of Completed Education *
+                <label htmlFor="app-education-level" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Highest Level of Completed Education <span className="text-[var(--primary)]">*</span>
                 </label>
                 <select
+                  id="app-education-level"
                   value={educationLevel}
                   onChange={(e) => setEducationLevel(e.target.value)}
-                  className="form-input form-select text-xs font-medium cursor-pointer"
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] form-select focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all cursor-pointer font-medium"
                   required
                 >
                   <option value="">-- Select Education Level --</option>
@@ -700,18 +719,18 @@ export default function JobApplicationForm({
                       type="button"
                       key={cert}
                       onClick={() => handleToggleCert(cert)}
-                      className={`text-left p-2.5 rounded-xl border text-xs font-medium transition-all flex items-center justify-between ${
+                      className={`text-left p-2.5 rounded-xl border text-xs font-medium transition-all flex items-center justify-between cursor-pointer ${
                         isChecked
                           ? "bg-[rgba(225,77,24,0.08)] border-[var(--primary)] text-[var(--primary)] shadow-xs"
-                          : "bg-white border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--primary)]/50"
+                          : "bg-white border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--primary)]/50 hover:bg-gray-50/50"
                       }`}
                     >
                       <span className="truncate pr-2">{cert}</span>
                       <span
-                        className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 border ${
+                        className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 border transition-all ${
                           isChecked
                             ? "bg-[var(--primary)] border-[var(--primary)] text-white"
-                            : "border-[var(--border)]"
+                            : "border-[var(--border)] bg-gray-50"
                         }`}
                       >
                         {isChecked && (
@@ -726,32 +745,32 @@ export default function JobApplicationForm({
               </div>
             </div>
 
-            <div className="form-group m-0">
+            <div>
+              <label htmlFor="app-custom-certs" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                Other Professional Licenses or Certifications <span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
               <input
                 type="text"
                 id="app-custom-certs"
-                className="form-input"
-                placeholder=" "
+                className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all"
+                placeholder="e.g. Certified Floodplain Manager, Certified Cost Estimator, OSHA 30"
                 value={customCertifications}
                 onChange={(e) => setCustomCertifications(e.target.value)}
               />
-              <label htmlFor="app-custom-certs" className="form-label">
-                Other Professional Licenses or Certifications (Optional)
-              </label>
             </div>
 
-            <div className="form-group m-0">
+            <div>
+              <label htmlFor="app-skills" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                Key Technical Competencies &amp; Software Tools
+              </label>
               <textarea
                 id="app-skills"
-                className="form-input"
+                className="w-full bg-white border border-[var(--border)] rounded-xl p-3.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all resize-y leading-relaxed"
                 rows={2}
-                placeholder=" "
+                placeholder="e.g. EMIE, FEMA Grants Portal, Procore, Cost Estimating, MS Excel, RSMeans..."
                 value={coreSkills}
                 onChange={(e) => setCoreSkills(e.target.value)}
               ></textarea>
-              <label htmlFor="app-skills" className="form-label">
-                Key Technical Competencies &amp; Software Tools (e.g., EMIE, FEMA Grants Portal, Procore, Excel)
-              </label>
             </div>
           </div>
         )}
@@ -761,13 +780,14 @@ export default function JobApplicationForm({
           <div className="space-y-5 animate-fadeIn">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
-                  U.S. Employment Eligibility *
+                <label htmlFor="app-work-auth" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  U.S. Employment Eligibility <span className="text-[var(--primary)]">*</span>
                 </label>
                 <select
+                  id="app-work-auth"
                   value={workAuthorization}
                   onChange={(e) => setWorkAuthorization(e.target.value)}
-                  className="form-input form-select text-xs font-medium cursor-pointer"
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] form-select focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all cursor-pointer font-medium"
                   required
                 >
                   <option value="US Citizen">U.S. Citizen</option>
@@ -778,13 +798,14 @@ export default function JobApplicationForm({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
-                  Will you now or in future require sponsorship? *
+                <label htmlFor="app-sponsorship" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Will you now or in future require sponsorship? <span className="text-[var(--primary)]">*</span>
                 </label>
                 <select
+                  id="app-sponsorship"
                   value={requiresSponsorship}
                   onChange={(e) => setRequiresSponsorship(e.target.value)}
-                  className="form-input form-select text-xs font-medium cursor-pointer"
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] form-select focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all cursor-pointer font-medium"
                   required
                 >
                   <option value="No">No</option>
@@ -795,13 +816,14 @@ export default function JobApplicationForm({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
-                  Active or Past Federal Security Clearance *
+                <label htmlFor="app-security-clearance" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Active or Past Federal Security Clearance <span className="text-[var(--primary)]">*</span>
                 </label>
                 <select
+                  id="app-security-clearance"
                   value={securityClearance}
                   onChange={(e) => setSecurityClearance(e.target.value)}
-                  className="form-input form-select text-xs font-medium cursor-pointer"
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] form-select focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all cursor-pointer font-medium"
                   required
                 >
                   {CLEARANCE_LEVELS.map((clr) => (
@@ -813,13 +835,14 @@ export default function JobApplicationForm({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
-                  Emergency Deployment &amp; Travel Readiness *
+                <label htmlFor="app-travel-readiness" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Emergency Deployment &amp; Travel Readiness <span className="text-[var(--primary)]">*</span>
                 </label>
                 <select
+                  id="app-travel-readiness"
                   value={willingToTravel}
                   onChange={(e) => setWillingToTravel(e.target.value)}
-                  className="form-input form-select text-xs font-medium cursor-pointer"
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] form-select focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all cursor-pointer font-medium"
                   required
                 >
                   {TRAVEL_PREFERENCES.map((trav) => (
@@ -832,32 +855,32 @@ export default function JobApplicationForm({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="form-group m-0">
+              <div>
+                <label htmlFor="app-start-date" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Earliest Available Start Date
+                </label>
                 <input
                   type="text"
                   id="app-start-date"
-                  className="form-input"
-                  placeholder=" "
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all"
+                  placeholder="e.g. Immediately / Within 48 hours"
                   value={earliestStartDate}
                   onChange={(e) => setEarliestStartDate(e.target.value)}
                 />
-                <label htmlFor="app-start-date" className="form-label">
-                  Earliest Available Start Date
-                </label>
               </div>
 
-              <div className="form-group m-0">
+              <div>
+                <label htmlFor="app-salary" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Desired Hourly Rate / Compensation
+                </label>
                 <input
                   type="text"
                   id="app-salary"
-                  className="form-input"
-                  placeholder=" "
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all"
+                  placeholder="e.g. $28.00–$35.00/hr or $75,000/yr"
                   value={desiredCompensation}
                   onChange={(e) => setDesiredCompensation(e.target.value)}
                 />
-                <label htmlFor="app-salary" className="form-label">
-                  Desired Hourly Rate / Annual Compensation
-                </label>
               </div>
             </div>
 
@@ -872,11 +895,11 @@ export default function JobApplicationForm({
 
         {/* ================= STEP 4: Documents, Statement & Legal Sign-off ================= */}
         {currentStep === 4 && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-5 animate-fadeIn">
             {/* Resume Upload Dropzone */}
             <div>
               <label className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
-                Resume / Curriculum Vitae Document (PDF or Word) *
+                Resume / Curriculum Vitae Document (PDF or Word) <span className="text-[var(--primary)]">*</span>
               </label>
               <div className="border-2 border-dashed border-[var(--border)] rounded-xl py-6 px-4 text-center cursor-pointer bg-[rgba(225,77,24,0.02)] relative transition-all duration-300 hover:border-[var(--primary)]">
                 <input
@@ -909,19 +932,19 @@ export default function JobApplicationForm({
             </div>
 
             {/* Statement of Interest / Candidate Pitch */}
-            <div className="form-group m-0">
+            <div>
+              <label htmlFor="app-statement" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                Statement of Interest &amp; Qualifications <span className="text-[var(--primary)]">*</span>
+              </label>
               <textarea
                 id="app-statement"
-                className="form-input"
+                className="w-full bg-white border border-[var(--border)] rounded-xl p-3.5 text-xs sm:text-sm text-[var(--text-bright)] placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all resize-y leading-relaxed"
                 rows={4}
-                placeholder=" "
+                placeholder="Briefly describe your relevant background, disaster recovery experience, or specialized skills that make you a strong candidate for this position..."
                 value={statementOfInterest}
                 onChange={(e) => setStatementOfInterest(e.target.value)}
                 required
               ></textarea>
-              <label htmlFor="app-statement" className="form-label">
-                Statement of Interest &amp; Why You Are Qualified for this Role *
-              </label>
             </div>
 
             {/* Legal Attestation & Truth in Application */}
@@ -938,7 +961,7 @@ export default function JobApplicationForm({
                   type="checkbox"
                   checked={attestationConfirmed}
                   onChange={(e) => setAttestationConfirmed(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)] cursor-pointer"
                   required
                 />
                 <span className="text-xs font-medium text-[var(--text-bright)] leading-normal">
@@ -949,27 +972,30 @@ export default function JobApplicationForm({
 
             {/* Digital Signature */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="form-group m-0">
+              <div>
+                <label htmlFor="app-signature" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Digital Signature (Type Full Legal Name) <span className="text-[var(--primary)]">*</span>
+                </label>
                 <input
                   type="text"
                   id="app-signature"
-                  className="form-input font-[family-name:var(--font-space-grotesk)] font-bold text-sm tracking-wide"
-                  placeholder=" "
+                  className="w-full bg-white border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-bright)] font-[family-name:var(--font-space-grotesk)] font-bold tracking-wide placeholder:font-normal placeholder:text-gray-400 focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15 transition-all"
+                  placeholder="Type your full legal name"
                   value={digitalSignature}
                   onChange={(e) => setDigitalSignature(e.target.value)}
                   required
                 />
-                <label htmlFor="app-signature" className="form-label">
-                  Digital Signature (Type Full Legal Name) *
-                </label>
               </div>
 
-              <div className="form-group m-0">
+              <div>
+                <label htmlFor="app-signed-date" className="block text-xs font-semibold text-[var(--text-bright)] mb-1.5">
+                  Application Submission Date
+                </label>
                 <input
                   type="text"
                   id="app-signed-date"
-                  className="form-input text-xs bg-gray-50 text-[var(--text-muted)] cursor-not-allowed"
-                  value={`Date: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`}
+                  className="w-full bg-gray-50 border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-muted)] cursor-not-allowed font-medium"
+                  value={new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                   readOnly
                 />
               </div>
@@ -1000,7 +1026,7 @@ export default function JobApplicationForm({
               type="button"
               onClick={handleBack}
               disabled={isSubmitting}
-              className="btn btn-secondary py-2.5 px-5 text-xs font-semibold flex items-center gap-1.5"
+              className="btn btn-secondary py-2.5 px-5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
             >
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="15 18 9 12 15 6"></polyline>
@@ -1017,7 +1043,7 @@ export default function JobApplicationForm({
             <button
               type="button"
               onClick={handleNext}
-              className="btn btn-primary py-2.5 px-6 text-xs font-semibold flex items-center gap-1.5 ml-auto"
+              className="btn btn-primary py-2.5 px-6 text-xs font-semibold flex items-center gap-1.5 ml-auto cursor-pointer"
             >
               Continue to Step {currentStep + 1}
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1028,7 +1054,7 @@ export default function JobApplicationForm({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="btn-submit py-3 px-7 text-xs font-bold uppercase tracking-wider flex items-center gap-2 ml-auto shadow-md hover:shadow-lg transition-all"
+              className="btn-submit py-3 px-7 text-xs font-bold uppercase tracking-wider flex items-center gap-2 ml-auto shadow-md hover:shadow-lg transition-all cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -1067,4 +1093,3 @@ export default function JobApplicationForm({
     </div>
   );
 }
-

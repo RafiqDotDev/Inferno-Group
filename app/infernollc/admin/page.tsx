@@ -1040,6 +1040,66 @@ export default function AdminPage() {
     showToast("Exported leads to CSV.");
   };
 
+  // Open Resume payload in a new tab (PDF/document) or formatted applicant dossier
+  const handleOpenResume = (lead: AdminLead) => {
+    if (lead.resumeData && lead.resumeData.startsWith("data:")) {
+      try {
+        const arr = lead.resumeData.split(",");
+        const mimeMatch = arr[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : "application/pdf";
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        const newTab = window.open(blobUrl, "_blank", "noopener,noreferrer");
+        if (!newTab) {
+          // Fallback if popup blocker intercepted window.open
+          const tempLink = document.createElement("a");
+          tempLink.href = blobUrl;
+          tempLink.target = "_blank";
+          tempLink.rel = "noopener noreferrer";
+          document.body.appendChild(tempLink);
+          tempLink.click();
+          document.body.removeChild(tempLink);
+        }
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+        return;
+      } catch (err) {
+        console.error("Error opening resume blob:", err);
+      }
+    }
+
+    // Text fallback dossier if no binary file was attached
+    const textContent =
+      `=================================================================\n` +
+      `THE INFERNO GROUP LLC - APPLICANT DOSSIER\n` +
+      `=================================================================\n\n` +
+      `ROLE APPLIED: ${lead.jobTitle || "Cadre Position"}\n` +
+      `CANDIDATE NAME: ${lead.name || lead.contactName || "N/A"}\n` +
+      `EMAIL: ${lead.email || lead.contactEmail || "N/A"}\n` +
+      `PHONE: ${lead.phone || "N/A"}\n` +
+      `TRANSMITTED ON: ${new Date(lead.createdAt).toLocaleString()}\n\n` +
+      `COVER STATEMENT / STATEMENT OF INTEREST:\n${lead.cover || lead.message || "None provided."}\n\n` +
+      `RESUME RECORD: ${lead.resumeName || "Uploaded via Portal"}\n`;
+    const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
+    const blobUrl = URL.createObjectURL(blob);
+    const newTab = window.open(blobUrl, "_blank", "noopener,noreferrer");
+    if (!newTab) {
+      const tempLink = document.createElement("a");
+      tempLink.href = blobUrl;
+      tempLink.target = "_blank";
+      tempLink.rel = "noopener noreferrer";
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+    }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+  };
+
   // Download Resume payload if Base64 exists or generate text dossier
   const handleDownloadResume = (lead: AdminLead) => {
     if (lead.resumeData && lead.resumeData.startsWith("data:")) {
@@ -2798,9 +2858,22 @@ export default function AdminPage() {
                                 {lead.name || lead.contactName || "Anonymous"}
                               </div>
                               {lead.resumeName && (
-                                <div className="text-xs text-[var(--secondary)] font-semibold mt-0.5">
-                                  📎 {lead.resumeName}
-                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenResume(lead);
+                                  }}
+                                  className="text-xs text-[var(--secondary)] hover:text-[var(--primary)] font-semibold mt-0.5 inline-flex items-center gap-1 cursor-pointer transition-colors group text-left"
+                                  title="Click to open resume in a new tab"
+                                >
+                                  <span>📎 {lead.resumeName}</span>
+                                  <svg className="w-3 h-3 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                    <polyline points="15 3 21 3 21 9" />
+                                    <line x1="10" y1="14" x2="21" y2="3" />
+                                  </svg>
+                                </button>
                               )}
                             </td>
                             <td className="py-3.5 px-4 text-[var(--adm-text-muted)] font-semibold">
@@ -3188,27 +3261,54 @@ export default function AdminPage() {
                       </div>
                     )}
 
-                    {/* Resume Download Action */}
+                    {/* Resume Open & Download Actions */}
                     {(selectedLead.resumeName ||
                       selectedLead.type === "APPLICATION") && (
-                      <div className="p-3 bg-[rgba(26,86,196,0.06)] border border-[rgba(26,86,196,0.2)] rounded-xl flex items-center justify-between">
-                        <div className="text-xs text-[var(--adm-text-primary)] font-medium">
-                          Candidate Resume:{" "}
-                          <strong>
-                            {selectedLead.resumeName || "Uploaded Document"}
-                          </strong>
+                      <div className="p-3.5 bg-[rgba(26,86,196,0.06)] border border-[rgba(26,86,196,0.2)] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="text-xs text-[var(--adm-text-primary)] font-medium flex items-center gap-1.5 flex-wrap">
+                          <span>Candidate Resume:</span>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenResume(selectedLead)}
+                            className="font-bold text-[var(--secondary)] hover:text-[var(--primary)] hover:underline inline-flex items-center gap-1 cursor-pointer transition-colors"
+                            title="Click to open resume in a new tab"
+                          >
+                            <span>{selectedLead.resumeName || "Uploaded Document"}</span>
+                            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                              <polyline points="15 3 21 3 21 9" />
+                              <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleDownloadResume(selectedLead)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--secondary)] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer font-[family-name:var(--font-space-grotesk)] shadow-xs transition-all active:scale-95"
-                        >
-                          <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" y1="15" x2="12" y2="3" />
-                          </svg>
-                          <span>Download Resume</span>
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenResume(selectedLead)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--primary)] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer font-[family-name:var(--font-space-grotesk)] shadow-xs transition-all active:scale-95"
+                            title="Open resume in a new browser tab"
+                          >
+                            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                              <polyline points="15 3 21 3 21 9" />
+                              <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                            <span>Open Resume</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadResume(selectedLead)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--secondary)] hover:opacity-90 text-white rounded-lg text-xs font-semibold cursor-pointer font-[family-name:var(--font-space-grotesk)] shadow-xs transition-all active:scale-95"
+                            title="Download resume file"
+                          >
+                            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="7 10 12 15 17 10" />
+                              <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            <span>Download</span>
+                          </button>
+                        </div>
                       </div>
                     )}
 
@@ -4347,6 +4447,7 @@ export default function AdminPage() {
                         department: "Emergency Operations & Relief",
                         location: "Orlando, Florida / Remote",
                         type: "Cadre / Temporary ($25.00–$35.00/hr)",
+                        lastDate: "Open Until Filled",
                         summary: "",
                         description: "",
                         responsibilities: [
@@ -4390,6 +4491,15 @@ export default function AdminPage() {
                         }`}
                       >
                         {job.status}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-[0.72rem] text-[var(--adm-text-muted)] font-medium">
+                      <span className="flex items-center gap-1 bg-[var(--adm-card-subtle)] px-2 py-0.5 rounded border border-[var(--adm-card-border)]">
+                        📍 {job.location || "Orlando, FL / Remote"}
+                      </span>
+                      <span className="flex items-center gap-1 bg-orange-50 text-orange-700 px-2 py-0.5 rounded border border-orange-200 font-semibold">
+                        ⏰ Deadline: {job.lastDate || "Open Until Filled"}
                       </span>
                     </div>
 
@@ -5855,8 +5965,10 @@ export default function AdminPage() {
                       })
                     }
                     className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    placeholder="e.g. Case Manager"
                   />
                 </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
@@ -5875,6 +5987,7 @@ export default function AdminPage() {
                         })
                       }
                       className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                      placeholder="e.g. Emergency Operations & Relief"
                     />
                   </div>
                   <div>
@@ -5891,12 +6004,102 @@ export default function AdminPage() {
                         })
                       }
                       className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                      placeholder="e.g. Cadre / Temporary ($25.00–$35.00/hr)"
                     />
                   </div>
                 </div>
+
+                {/* Location & Last Date to Apply */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Location / Deployment Area
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Orlando, Florida / Remote or Nationwide"
+                      value={editModal.item.location || ""}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: {
+                            ...editModal.item,
+                            location: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Last Date to Apply / Deadline
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. November 30, 2026 or Open Until Filled"
+                      value={editModal.item.lastDate || ""}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: {
+                            ...editModal.item,
+                            lastDate: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Publication Status
+                    </label>
+                    <select
+                      value={editModal.item.status || "published"}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: {
+                            ...editModal.item,
+                            status: e.target.value as "published" | "draft",
+                          },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    >
+                      <option value="published">Published</option>
+                      <option value="draft">Draft</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                      Posted Date
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="YYYY-MM-DD"
+                      value={editModal.item.postedDate || ""}
+                      onChange={(e) =>
+                        setEditModal({
+                          ...editModal,
+                          item: {
+                            ...editModal.item,
+                            postedDate: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
-                    Summary
+                    Summary (Short Excerpt)
                   </label>
                   <textarea
                     rows={2}
@@ -5908,21 +6111,63 @@ export default function AdminPage() {
                       })
                     }
                     className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    placeholder="Brief 1-2 sentence overview for careers cards"
                   ></textarea>
                 </div>
+
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Full Role Overview / Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editModal.item.description || ""}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: { ...editModal.item, description: e.target.value },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs"
+                    placeholder="Full detailed job description shown on application page"
+                  ></textarea>
+                </div>
+
                 <div>
                   <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
                     Responsibilities (One per line)
                   </label>
                   <textarea
-                    rows={4}
-                    value={editModal.item.responsibilities.join("\n")}
+                    rows={3}
+                    value={(editModal.item.responsibilities || []).join("\n")}
                     onChange={(e) =>
                       setEditModal({
                         ...editModal,
                         item: {
                           ...editModal.item,
                           responsibilities: e.target.value
+                            .split("\n")
+                            .filter(Boolean),
+                        },
+                      })
+                    }
+                    className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] focus:bg-[var(--adm-card)] focus:border-[var(--primary)] rounded-xl p-2 text-xs font-mono"
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-[var(--adm-text-primary)] mb-1 font-[family-name:var(--font-space-grotesk)]">
+                    Required Qualifications (One per line)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={(editModal.item.requirements || []).join("\n")}
+                    onChange={(e) =>
+                      setEditModal({
+                        ...editModal,
+                        item: {
+                          ...editModal.item,
+                          requirements: e.target.value
                             .split("\n")
                             .filter(Boolean),
                         },

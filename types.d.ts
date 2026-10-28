@@ -110,6 +110,7 @@ interface Job {
   responsibilities: string[];
   requirements: string[];
   postedDate: string;
+  lastDate?: string;
   status: "draft" | "published";
 }
 

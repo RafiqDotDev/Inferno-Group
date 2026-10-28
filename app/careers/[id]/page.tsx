@@ -90,6 +90,13 @@ export default function JobDetailsPage() {
                     {job.location}
                   </span>
                 )}
+                <span className="text-xs text-[var(--primary)] bg-orange-50 px-3 py-1 rounded border border-orange-200 font-semibold flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  Last Date: {job.lastDate || "Open Until Filled"}
+                </span>
               </div>
               <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl sm:text-3xl font-extrabold text-[var(--text-bright)]">
                 {job.title}
