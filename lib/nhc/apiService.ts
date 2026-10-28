@@ -8,6 +8,7 @@ import {
   WatchWarningArea,
   StormImpacts,
   DisturbanceArea,
+  RealtimeNWSAlert,
   TRACKER_UPDATE_INTERVAL_SECONDS,
 } from "./types";
 
@@ -660,4 +661,38 @@ function getFallbackDisturbances(basin: string, days: string): DisturbanceArea[]
     },
   ];
 }
+
+export async function fetchActiveNWSAlerts(): Promise<RealtimeNWSAlert[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  try {
+    const url = "https://api.weather.gov/alerts/active?event=Hurricane%20Warning,Hurricane%20Watch,Tropical%20Storm%20Warning,Tropical%20Storm%20Watch,Storm%20Surge%20Warning,Storm%20Surge%20Watch";
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "InfernoGroup-HurricaneDashboard/2.0 (contact: ops@infernogroup.com)",
+        "Accept": "application/geo+json",
+      },
+      next: { revalidate: TRACKER_UPDATE_INTERVAL_SECONDS },
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const features = Array.isArray(data?.features) ? data.features : [];
+    return features.map((f: any) => ({
+      id: f.id || f.properties?.id || "",
+      event: f.properties?.event || "Tropical Alert",
+      headline: f.properties?.headline || f.properties?.event || "",
+      severity: f.properties?.severity || "Unknown",
+      urgency: f.properties?.urgency || "Unknown",
+      areaDesc: f.properties?.areaDesc || "",
+      effective: f.properties?.effective || "",
+      expires: f.properties?.expires || "",
+    }));
+  } catch {
+    clearTimeout(timeoutId);
+    return [];
+  }
+}
+
 

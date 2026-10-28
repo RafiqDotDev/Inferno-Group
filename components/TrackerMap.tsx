@@ -266,16 +266,53 @@ export default function TrackerMap({
                   />
                 )}
 
-              {/* Historical Track Line */}
+              {/* Historical Track Line & Waypoints */}
               {isActive && pastTrack.length > 0 && (
-                <Polyline
-                  positions={pastTrack}
-                  pathOptions={{
-                    color: "#3b82f6",
-                    weight: 2,
-                    dashArray: "4, 4",
-                  }}
-                />
+                <>
+                  <Polyline
+                    positions={pastTrack}
+                    pathOptions={{
+                      color: "#3b82f6",
+                      weight: 3,
+                      dashArray: "4, 4",
+                    }}
+                  />
+                  {Array.isArray(storm.historicalTrack) &&
+                    storm.historicalTrack.map((pt, pIdx) => (
+                      <CircleMarker
+                        key={`track-pt-${pIdx}`}
+                        center={[pt.latitude, pt.longitude]}
+                        radius={5}
+                        pathOptions={{
+                          color: "#1e3a8a",
+                          fillColor:
+                            pt.windSpeedMph >= 130
+                              ? "#dc2626"
+                              : pt.windSpeedMph >= 96
+                                ? "#ea580c"
+                                : pt.windSpeedMph >= 74
+                                  ? "#f59e0b"
+                                  : "#3b82f6",
+                          fillOpacity: 0.95,
+                          weight: 1.5,
+                        }}
+                      >
+                        <Tooltip direction="top" offset={[0, -6]}>
+                          <div className="text-xs p-1">
+                            <div className="font-bold text-slate-900">
+                              {pt.advisoryNumber || pt.timestamp}
+                            </div>
+                            <div className="text-slate-600">
+                              {pt.windSpeedMph} mph · {pt.pressureMb ? `${pt.pressureMb} mb` : ""} ({pt.category})
+                            </div>
+                            <div className="text-[0.65rem] text-slate-400">
+                              {pt.latitude}°N, {Math.abs(pt.longitude)}°W
+                            </div>
+                          </div>
+                        </Tooltip>
+                      </CircleMarker>
+                    ))}
+                </>
               )}
 
               {/* Forecast Track Line */}

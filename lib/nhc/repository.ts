@@ -1,5 +1,14 @@
-import { fetchRawStorms, normalizeStorm } from "./apiService";
-import { DetailedStorm, OverviewMetrics, TRACKER_UPDATE_INTERVAL_MS } from "./types";
+import { fetchRawStorms, normalizeStorm, fetchTropicalDisturbances, fetchActiveNWSAlerts } from "./apiService";
+import { getRecentHistoricalStorms, getHistoricalStormById } from "./historicalArchive";
+import {
+  DetailedStorm,
+  OverviewMetrics,
+  RealtimeUnifiedFeed,
+  DisturbanceArea,
+  RealtimeNWSAlert,
+  TRACKER_UPDATE_INTERVAL_MS,
+  REALTIME_TRACKER_INTERVAL_SECONDS,
+} from "./types";
 
 interface CacheState {
   storms: DetailedStorm[];
@@ -13,6 +22,7 @@ const cache: CacheState = {
 
 export async function getActiveStorms(forceRefresh = false): Promise<{
   storms: DetailedStorm[];
+  recentStorms: DetailedStorm[];
   metrics: OverviewMetrics;
   fetchedAt: string;
   nextUpdateAt: string;
@@ -44,18 +54,22 @@ export async function getActiveStorms(forceRefresh = false): Promise<{
   ).toISOString();
 
   const storms = cache.storms;
+  const recentStorms = getRecentHistoricalStorms();
+
   const metrics: OverviewMetrics = {
     activeStormsCount: storms.length,
     hurricanesCount: storms.filter((s) => s.category.startsWith("Cat")).length,
     tropicalStormsCount: storms.filter((s) => s.category === "TS").length,
     depressionsCount: storms.filter((s) => s.category === "TD").length,
     disturbancesCount: 0,
+    recentStormsCount: recentStorms.length,
     lastUpdated: fetchedAt,
     nextUpdateAt,
   };
 
   return {
     storms,
+    recentStorms,
     metrics,
     fetchedAt,
     nextUpdateAt,
@@ -63,9 +77,18 @@ export async function getActiveStorms(forceRefresh = false): Promise<{
 }
 
 export async function getStormById(id: string): Promise<DetailedStorm | null> {
-  const { storms } = await getActiveStorms();
-  const match = storms.find((s) => s.id.toLowerCase() === id.toLowerCase() || s.name.toLowerCase() === id.toLowerCase());
-  return match || storms[0] || null;
+  const { storms, recentStorms } = await getActiveStorms();
+  const matchActive = storms.find(
+    (s) => s.id.toLowerCase() === id.toLowerCase() || s.name.toLowerCase() === id.toLowerCase()
+  );
+  if (matchActive) return matchActive;
+
+  const matchRecent = recentStorms.find(
+    (s) => s.id.toLowerCase() === id.toLowerCase() || s.name.toLowerCase() === id.toLowerCase()
+  );
+  if (matchRecent) return matchRecent;
+
+  return getHistoricalStormById(id) || storms[0] || recentStorms[0] || null;
 }
 
 export function generateStormGeoJSON(storm: DetailedStorm) {
@@ -114,5 +137,33 @@ export function generateStormCSV(storm: DetailedStorm): string {
     .join("\n");
 
   return headers + current + forecast;
+}
+
+export async function getRealtimeUnifiedData(
+  basin = "atlc",
+  days = "7",
+  forceRefresh = false
+): Promise<RealtimeUnifiedFeed> {
+  const [{ storms, recentStorms, metrics, fetchedAt, nextUpdateAt }, disturbances, alerts] =
+    await Promise.all([
+      getActiveStorms(forceRefresh),
+      fetchTropicalDisturbances(basin, days),
+      fetchActiveNWSAlerts(),
+    ]);
+
+  metrics.disturbancesCount = disturbances.length;
+  metrics.recentStormsCount = recentStorms.length;
+
+  return {
+    fetchedAt,
+    nextUpdateAt,
+    updateIntervalSeconds: REALTIME_TRACKER_INTERVAL_SECONDS,
+    dataSource: "NOAA National Hurricane Center (NHC) & National Weather Service (NWS)",
+    metrics,
+    storms,
+    recentStorms,
+    disturbances,
+    alerts,
+  };
 }
 

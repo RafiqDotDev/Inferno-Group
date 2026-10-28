@@ -267,7 +267,7 @@ export default function AboutClient() {
                 <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-6 sm:right-auto flex items-center gap-3 bg-white/95 backdrop-blur-md p-2.5 rounded-2xl border border-[var(--border)] shadow-md">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/logo.jpeg"
+                    src="/logo.png"
                     alt="The Inferno Group"
                     className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-contain shadow-sm shrink-0"
                   />
@@ -614,13 +614,13 @@ export default function AboutClient() {
                         member.image.startsWith("data:") ||
                         member.image.startsWith("/")
                           ? member.image
-                          : "/logo.jpeg"
+                          : "/logo.png"
                       }
                       alt={member.name}
                       onError={(e) => {
                         const target = e.currentTarget;
-                        if (!target.src.includes("logo.jpeg")) {
-                          target.src = "/logo.jpeg";
+                        if (!target.src.includes("logo.png")) {
+                          target.src = "/logo.png";
                         }
                       }}
                       className={`team-member-avatar w-full h-full rounded-full transition-transform duration-500 group-hover:scale-105 ${
@@ -990,13 +990,13 @@ export default function AboutClient() {
                     selectedMember.image.startsWith("data:") ||
                     selectedMember.image.startsWith("/")
                       ? selectedMember.image
-                      : "/logo.jpeg"
+                      : "/logo.png"
                   }
                   alt={selectedMember.name}
                   onError={(e) => {
                     const target = e.currentTarget;
-                    if (!target.src.includes("logo.jpeg")) {
-                      target.src = "/logo.jpeg";
+                    if (!target.src.includes("logo.png")) {
+                      target.src = "/logo.png";
                     }
                   }}
                   className={`w-full h-full rounded-full ${

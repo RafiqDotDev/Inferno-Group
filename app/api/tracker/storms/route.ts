@@ -6,20 +6,23 @@ import { logSecurityEvent } from "@/lib/security/logger";
 export async function GET(req: NextRequest) {
   try {
     const forceRefresh = req.nextUrl.searchParams.get("refresh") === "true";
-    const { storms, metrics, fetchedAt, nextUpdateAt } = await getActiveStorms(forceRefresh);
+    const { storms, recentStorms, metrics, fetchedAt, nextUpdateAt } = await getActiveStorms(forceRefresh);
     return NextResponse.json(
       {
         fetchedAt,
         nextUpdateAt,
+        updateIntervalSeconds: TRACKER_UPDATE_INTERVAL_SECONDS,
         updateIntervalHours: TRACKER_UPDATE_INTERVAL_HOURS,
+        dataSource: "NOAA National Hurricane Center (NHC)",
         metrics,
         storms,
+        recentStorms,
       },
       {
         headers: {
           "Cache-Control": forceRefresh
-            ? "no-store"
-            : `public, s-maxage=${TRACKER_UPDATE_INTERVAL_SECONDS}, stale-while-revalidate=3600`,
+            ? "no-store, no-cache, must-revalidate"
+            : `public, s-maxage=${TRACKER_UPDATE_INTERVAL_SECONDS}, stale-while-revalidate=120`,
           "Access-Control-Allow-Origin": "*",
         },
       }

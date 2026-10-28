@@ -47,7 +47,7 @@ function categoryColor(cat: string) {
 }
 
 const DISMISS_KEY = "tracker-alert-dismissed-ids";
-const POLL_INTERVAL_MS = TRACKER_UPDATE_INTERVAL_MS; // Auto-update every 6 hours (21,600,000 ms)
+const POLL_INTERVAL_MS = TRACKER_UPDATE_INTERVAL_MS; // Real-time auto-update every 60 seconds (60,000 ms)
 
 function getDismissed(): Set<string> {
   if (typeof window === "undefined") return new Set();

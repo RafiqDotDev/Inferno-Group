@@ -179,7 +179,7 @@ export default function NewsPage() {
                   <div className="flex gap-2.5 items-center mb-2.5">
                     <div className="w-7 h-7 rounded-full bg-[var(--primary)]/10 flex items-center justify-center p-0.5 shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo.jpeg" alt="Inferno Logo" className="w-full rounded-full" />
+                      <img src="/logo.png" alt="Inferno Logo" className="w-full h-full object-contain" />
                     </div>
                     <div>
                       <h4 className="font-bold text-[var(--text-bright)] text-xs">The Inferno Group LLC</h4>
@@ -198,7 +198,7 @@ export default function NewsPage() {
                   <div className="flex gap-2.5 items-center mb-2.5">
                     <div className="w-7 h-7 rounded-full bg-[var(--primary)]/10 flex items-center justify-center p-0.5 shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo.jpeg" alt="Inferno Logo" className="w-full rounded-full" />
+                      <img src="/logo.png" alt="Inferno Logo" className="w-full h-full object-contain" />
                     </div>
                     <div>
                       <h4 className="font-bold text-[var(--text-bright)] text-xs">Inferno Cares</h4>

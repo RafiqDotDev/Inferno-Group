@@ -1,6 +1,11 @@
-export const TRACKER_UPDATE_INTERVAL_HOURS = 6;
-export const TRACKER_UPDATE_INTERVAL_SECONDS = TRACKER_UPDATE_INTERVAL_HOURS * 60 * 60; // 21,600 seconds (6 hours)
-export const TRACKER_UPDATE_INTERVAL_MS = TRACKER_UPDATE_INTERVAL_SECONDS * 1000; // 21,600,000 ms (6 hours)
+// Real-time NOAA Hurricane & Cyclone Tracker intervals
+// Server cache revalidation: 60 seconds to catch new advisory packages immediately upon issuance
+export const REALTIME_TRACKER_INTERVAL_SECONDS = 60;
+export const REALTIME_TRACKER_INTERVAL_MS = REALTIME_TRACKER_INTERVAL_SECONDS * 1000; // 60,000 ms
+
+export const TRACKER_UPDATE_INTERVAL_HOURS = 1; 
+export const TRACKER_UPDATE_INTERVAL_SECONDS = REALTIME_TRACKER_INTERVAL_SECONDS;
+export const TRACKER_UPDATE_INTERVAL_MS = REALTIME_TRACKER_INTERVAL_MS;
 
 export type BasinType = "AL" | "EP" | "CP" | "SL" | "WP" | "IO" | "OTHER";
 export type StormCategoryType = "TD" | "TS" | "Cat1" | "Cat2" | "Cat3" | "Cat4" | "Cat5" | "Unknown";
@@ -118,6 +123,17 @@ export interface DetailedStorm {
     kml?: string;
     csv?: string;
   };
+
+  // Historical & Recent Activity Metadata
+  isHistorical?: boolean;
+  activityDates?: string; // e.g. "October 5 – 10, 2026"
+  relativeTimeAgo?: string; // e.g. "3 weeks ago"
+  peakCategory?: StormCategoryType;
+  peakWindsMph?: number;
+  minPressureMb?: number;
+  landfallLocation?: string;
+  landfallDate?: string;
+  impactSummary?: string;
 }
 
 export interface DisturbanceArea {
@@ -140,7 +156,40 @@ export interface OverviewMetrics {
   tropicalStormsCount: number;
   depressionsCount: number;
   disturbancesCount: number;
+  recentStormsCount?: number;
   lastUpdated: string;
   nextUpdateAt?: string;
+}
+
+export interface RealtimeStormFeed {
+  fetchedAt: string;
+  nextUpdateAt: string;
+  updateIntervalSeconds: number;
+  dataSource: string;
+  metrics: OverviewMetrics;
+  storms: DetailedStorm[];
+  recentStorms?: DetailedStorm[];
+}
+
+export interface RealtimeNWSAlert {
+  id: string;
+  event: string;
+  headline: string;
+  severity: string;
+  urgency: string;
+  areaDesc: string;
+  effective: string;
+  expires: string;
+}
+
+export interface RealtimeUnifiedFeed extends RealtimeStormFeed {
+  disturbances: DisturbanceArea[];
+  outlook?: {
+    basin: string;
+    title: string;
+    pubDate: string;
+    description: string;
+  } | null;
+  alerts: RealtimeNWSAlert[];
 }
 

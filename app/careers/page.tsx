@@ -4,6 +4,31 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import RevealOnMount from "@/components/RevealOnMount";
 import { dataStore, Job } from "@/utils/dataStore";
+import JobApplicationForm from "@/components/JobApplicationForm";
+
+const generalCadreJob: Job = {
+  id: "general-talent-cadre",
+  title: "Emergency Deployment Cadre & General Talent Pool",
+  department: "Emergency Operations & Strategic Staffing",
+  location: "Nationwide Deployments / Remote / On-Site",
+  type: "Cadre Roster / Ongoing Screening",
+  summary:
+    "Open application for disaster response specialists, FEMA public assistance consultants, cost estimators, and grant managers seeking rapid roster deployment.",
+  description:
+    "The Inferno Group LLC maintains a pre-qualified cadre of disaster recovery professionals, federal compliance experts, and emergency operations personnel.",
+  responsibilities: [
+    "Support emergency response deployments, field operations, or remote consulting as missions activate.",
+    "Perform grant reviews, damage assessments, or financial compliance oversight under federal guidelines.",
+    "Collaborate with multi-disciplinary crisis response teams and governmental partners.",
+  ],
+  requirements: [
+    "Relevant background in disaster recovery, public assistance, case management, engineering, or accounting.",
+    "U.S. work authorization and ability to pass standard government background checks.",
+    "Flexibility for rapid mobilization during federally declared emergencies.",
+  ],
+  postedDate: "Ongoing Roster",
+  status: "published",
+};
 
 export default function CareersPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -11,6 +36,7 @@ export default function CareersPage() {
   const [selectedDept, setSelectedDept] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isMounted, setIsMounted] = useState(false);
+  const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
 
   const itemsPerPage = 6;
 
@@ -131,8 +157,8 @@ export default function CareersPage() {
                       </span>
                     </div>
                   </div>
-                  <Link href={`/careers/${job.id}`} className="btn btn-secondary no-underline w-full sm:w-auto text-center justify-center">
-                    View Opportunity
+                  <Link href={`/careers/${job.id}`} className="btn btn-primary no-underline w-full sm:w-auto text-center justify-center">
+                    Apply for Position
                   </Link>
                 </div>
                 <p className="text-[var(--text-muted)] text-[0.95rem] leading-[1.6]">
@@ -170,30 +196,58 @@ export default function CareersPage() {
           </div>
         )}
 
-        {/* Direct Talent & Resume Submission Card */}
-        <div className="mt-14 max-w-[800px] mx-auto p-6 sm:p-8 bg-[var(--glass)] border border-[var(--border)] rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left shadow-xs">
+        {/* General Cadre Application Card */}
+        <div className="mt-14 max-w-[900px] mx-auto p-6 sm:p-8 bg-[var(--glass)] border border-[var(--border)] rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left shadow-xs">
           <div>
             <span className="text-[0.75rem] font-bold tracking-wider uppercase text-[var(--primary)] mb-1 block">
-              Deployable Cadre Talent Pool
+              Deployable Cadre Talent Network
             </span>
-            <h3 className="font-[family-name:var(--font-space-grotesk)] text-lg font-bold text-[var(--text-bright)]">
-              Don&apos;t See an Exact Fit? Submit Your Resume
+            <h3 className="font-[family-name:var(--font-space-grotesk)] text-lg sm:text-xl font-bold text-[var(--text-bright)]">
+              Don&apos;t See an Exact Match? Join Our Roster
             </h3>
-            <p className="text-xs text-[var(--text-muted)] mt-1.5 max-w-[480px] leading-relaxed">
-              We are constantly staging emergency recovery specialists, DCAA analysts, and public assistance specialists for rapid deployment. Forward your resume and credentials directly to <strong className="text-[var(--primary)]">Jobs@theinfernogroup.com</strong>.
+            <p className="text-xs text-[var(--text-muted)] mt-1.5 max-w-[520px] leading-relaxed">
+              We are actively vetting disaster recovery specialists, DCAA analysts, FEMA public assistance advisors, and emergency operations personnel for upcoming regional deployments. Fill out an official general application to be registered in our active recruitment pool.
             </p>
           </div>
-          <a
-            href="mailto:Jobs@theinfernogroup.com?subject=Cadre%20Resume%20Submission"
-            className="btn btn-primary whitespace-nowrap shrink-0 inline-flex items-center gap-2"
-          >
-            <span>Email Resume</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <polyline points="22,6 12,13 2,6"></polyline>
-            </svg>
-          </a>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
+            <button
+              onClick={() => setIsGeneralModalOpen(true)}
+              className="btn btn-primary whitespace-nowrap inline-flex items-center justify-center gap-2"
+            >
+              <span>Submit Application</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
         </div>
+
+        {/* General Application Modal */}
+        {isGeneralModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[92vh] overflow-y-auto p-5 sm:p-8 shadow-2xl relative border border-[var(--border)] animate-fadeIn">
+              <button
+                type="button"
+                onClick={() => setIsGeneralModalOpen(false)}
+                className="absolute top-5 right-5 p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-all z-20 cursor-pointer"
+                aria-label="Close application modal"
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+
+              <JobApplicationForm
+                job={generalCadreJob}
+                isGeneralApplication={true}
+                onSuccess={() => {
+                  setTimeout(() => setIsGeneralModalOpen(false), 4000);
+                }}
+              />
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

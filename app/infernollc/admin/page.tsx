@@ -2979,7 +2979,165 @@ export default function AdminPage() {
                     </div>
 
                     {/* Specific details */}
-                    {selectedLead.cover && (
+                    {/* Structured Employment Application Dossier */}
+                    {(selectedLead.type === "APPLICATION" || selectedLead.applicationDetails) && (
+                      <div className="space-y-4 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-2xl p-4 sm:p-5">
+                        <div className="flex items-center justify-between border-b border-[var(--adm-card-border)] pb-3">
+                          <h4 className="text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                            Formal Candidate Application Dossier
+                          </h4>
+                          <span className="text-[0.7rem] font-semibold text-[var(--primary)] bg-[rgba(225,77,24,0.08)] px-2.5 py-0.5 rounded-full border border-[rgba(225,77,24,0.2)]">
+                            {selectedLead.jobTitle || "Cadre Applicant"}
+                          </span>
+                        </div>
+
+                        {/* Screening & Compliance Badges */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="p-3 bg-[var(--adm-card)] rounded-xl border border-[var(--adm-card-border)]">
+                            <span className="text-[0.68rem] text-[var(--adm-text-muted)] uppercase tracking-wider block font-semibold mb-1">
+                              Work Authorization
+                            </span>
+                            <span className="text-xs font-bold text-[var(--adm-text-primary)]">
+                              {selectedLead.workAuthorization || selectedLead.applicationDetails?.workAuthorization || "Declared"}
+                            </span>
+                          </div>
+
+                          <div className="p-3 bg-[var(--adm-card)] rounded-xl border border-[var(--adm-card-border)]">
+                            <span className="text-[0.68rem] text-[var(--adm-text-muted)] uppercase tracking-wider block font-semibold mb-1">
+                              Security Clearance
+                            </span>
+                            <span className="text-xs font-bold text-[var(--secondary)]">
+                              {selectedLead.securityClearance || selectedLead.applicationDetails?.securityClearance || "None"}
+                            </span>
+                          </div>
+
+                          <div className="p-3 bg-[var(--adm-card)] rounded-xl border border-[var(--adm-card-border)]">
+                            <span className="text-[0.68rem] text-[var(--adm-text-muted)] uppercase tracking-wider block font-semibold mb-1">
+                              Travel / Deployment
+                            </span>
+                            <span className="text-xs font-bold text-[var(--adm-text-primary)]">
+                              {selectedLead.willingToTravel || selectedLead.applicationDetails?.willingToTravel || "Flexible"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Experience & Education Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                          <div>
+                            <span className="text-[var(--adm-text-muted)] block text-[0.7rem]">
+                              Experience Level
+                            </span>
+                            <span className="font-semibold text-[var(--adm-text-primary)]">
+                              {selectedLead.yearsExperience || selectedLead.applicationDetails?.yearsExperience || "N/A"}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-[var(--adm-text-muted)] block text-[0.7rem]">
+                              Education Completed
+                            </span>
+                            <span className="font-semibold text-[var(--adm-text-primary)]">
+                              {selectedLead.educationLevel || selectedLead.applicationDetails?.educationLevel || "N/A"}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-[var(--adm-text-muted)] block text-[0.7rem]">
+                              Earliest Available Date
+                            </span>
+                            <span className="font-semibold text-[var(--adm-text-primary)]">
+                              {selectedLead.earliestStartDate || selectedLead.applicationDetails?.earliestStartDate || "Immediate"}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-[var(--adm-text-muted)] block text-[0.7rem]">
+                              Desired Compensation
+                            </span>
+                            <span className="font-semibold text-[var(--primary)]">
+                              {selectedLead.desiredCompensation || selectedLead.applicationDetails?.desiredCompensation || "Standard Rate"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Location & LinkedIn */}
+                        <div className="flex flex-wrap gap-4 text-xs pt-1 border-t border-[var(--adm-card-border)]">
+                          {(selectedLead.cityStateZip || selectedLead.applicationDetails?.cityStateZip) && (
+                            <div>
+                              <span className="text-[var(--adm-text-muted)] mr-1.5">Candidate Location:</span>
+                              <strong className="text-[var(--adm-text-primary)]">
+                                {selectedLead.cityStateZip || selectedLead.applicationDetails?.cityStateZip}
+                              </strong>
+                            </div>
+                          )}
+                          {(selectedLead.linkedinUrl || selectedLead.applicationDetails?.linkedinUrl) && (
+                            <div>
+                              <span className="text-[var(--adm-text-muted)] mr-1.5">LinkedIn / Portfolio:</span>
+                              <a
+                                href={selectedLead.linkedinUrl || selectedLead.applicationDetails?.linkedinUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[var(--secondary)] font-semibold hover:underline"
+                              >
+                                View Profile ↗
+                              </a>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Certifications Pills */}
+                        {((selectedLead.certifications && selectedLead.certifications.length > 0) ||
+                          (selectedLead.applicationDetails?.certifications && selectedLead.applicationDetails.certifications.length > 0)) && (
+                          <div className="pt-2">
+                            <span className="text-[0.68rem] text-[var(--adm-text-muted)] uppercase tracking-wider block font-semibold mb-1.5">
+                              Verified Industry Certifications &amp; Credentials:
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(selectedLead.certifications || selectedLead.applicationDetails?.certifications || []).map(
+                                (c, cIdx) => (
+                                  <span
+                                    key={cIdx}
+                                    className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-md text-[0.72rem] font-semibold"
+                                  >
+                                    ✓ {c}
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Statement of Interest */}
+                        {(selectedLead.cover || selectedLead.applicationDetails?.statementOfInterest) && (
+                          <div className="pt-2">
+                            <span className="text-[0.68rem] text-[var(--adm-text-muted)] uppercase tracking-wider block font-semibold mb-1">
+                              Candidate Statement of Interest &amp; Qualifications:
+                            </span>
+                            <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-xl p-3 text-xs text-[var(--adm-text-primary)] whitespace-pre-line leading-relaxed">
+                              {selectedLead.applicationDetails?.statementOfInterest || selectedLead.cover}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Legal Attestation */}
+                        <div className="p-2.5 bg-[var(--adm-card)] rounded-xl border border-[var(--adm-card-border)] flex flex-wrap items-center justify-between gap-2 text-[0.72rem]">
+                          <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            E-Verify &amp; Truth in Application Attestation Confirmed
+                          </span>
+                          {(selectedLead.digitalSignature || selectedLead.applicationDetails?.digitalSignature) && (
+                            <span className="text-[var(--adm-text-muted)]">
+                              Digital Signature: <strong className="text-[var(--adm-text-primary)] font-mono">{selectedLead.digitalSignature || selectedLead.applicationDetails?.digitalSignature}</strong>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedLead.cover && selectedLead.type !== "APPLICATION" && (
                       <div>
                         <h4 className="text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider mb-1.5 font-[family-name:var(--font-space-grotesk)]">
                           Cover Statement / Background
@@ -4307,7 +4465,7 @@ export default function AdminPage() {
                           title: "",
                           summary: "",
                           content: "",
-                          image: "/logo.jpeg",
+                          image: "/logo.png",
                           featured: true,
                           status: "published",
                         },

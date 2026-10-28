@@ -13,6 +13,34 @@ import { quizQuestions } from "@/lib/quizQuestions";
 
 export type { KnowledgeBaseItem };
 
+export interface JobApplicationDetails {
+  // Contact & Profile
+  legalName: string;
+  preferredName?: string;
+  cityStateZip: string;
+  linkedinUrl?: string;
+
+  // Qualifications & Background
+  yearsExperience: string; // e.g. "0-2 years" | "3-5 years" | "6-10 years" | "10+ years"
+  educationLevel: string; // e.g. "High School / GED" | "Associate Degree" | "Bachelor's Degree" | "Master's Degree" | "Doctorate" | "Other"
+  certifications: string[]; // e.g. ["FEMA ICS-100/200/700/800", "PMP", "CFM", "DCAA Compliance", "PE", "CPA", "OSHA"]
+  customCertifications?: string;
+
+  // Authorization & Clearances
+  workAuthorization: "US Citizen" | "Permanent Resident" | "Authorized to Work" | "Requires Sponsorship" | string;
+  requiresSponsorship: "Yes" | "No" | string;
+  securityClearance: "None" | "Public Trust" | "Secret" | "Top Secret / SCI" | "Other" | string;
+  willingToTravel: "No Travel" | "Up to 25%" | "Up to 50%" | "75-100% Emergency Disaster Deployment" | string;
+  earliestStartDate: string;
+  desiredCompensation: string;
+
+  // Statement & Attestation
+  statementOfInterest: string;
+  attestationConfirmed: boolean;
+  digitalSignature: string;
+  signedAt: string;
+}
+
 export interface AdminLead {
   id: string;
   type: string;
@@ -54,6 +82,21 @@ export interface AdminLead {
   status?: "new" | "reviewed" | "contacted" | "archived";
   adminNotes?: string;
   createdAt: string;
+
+  // Comprehensive Employment Application Parameters
+  applicationDetails?: JobApplicationDetails;
+  workAuthorization?: string;
+  securityClearance?: string;
+  yearsExperience?: string;
+  educationLevel?: string;
+  certifications?: string[];
+  willingToTravel?: string;
+  earliestStartDate?: string;
+  desiredCompensation?: string;
+  digitalSignature?: string;
+  attestationConfirmed?: boolean;
+  cityStateZip?: string;
+  linkedinUrl?: string;
 }
 
 export interface ValueItem {
@@ -1398,7 +1441,7 @@ function getStoreItem<T>(key: string, defaultValue: T): T {
           migrated = true;
         }
         if (m.image && m.image.includes("placeholder")) {
-          m.image = "/logo.jpeg";
+          m.image = "/logo.png";
           migrated = true;
         }
       });
@@ -1420,7 +1463,7 @@ function getStoreItem<T>(key: string, defaultValue: T): T {
           migrated = true;
           if (s.id === "story-1") s.image = "/impact_texas.png";
           else if (s.id === "story-2") s.image = "/impact_debris.png";
-          else s.image = "/logo.jpeg";
+          else s.image = "/logo.png";
         }
       });
     }

@@ -376,6 +376,16 @@ interface DetailedStorm {
     kml?: string;
     csv?: string;
   };
+  // Historical & Recent Activity Metadata
+  isHistorical?: boolean;
+  activityDates?: string;
+  relativeTimeAgo?: string;
+  peakCategory?: StormCategoryType;
+  peakWindsMph?: number;
+  minPressureMb?: number;
+  landfallLocation?: string;
+  landfallDate?: string;
+  impactSummary?: string;
 }
 
 interface DisturbanceArea {
@@ -398,7 +408,9 @@ interface OverviewMetrics {
   tropicalStormsCount: number;
   depressionsCount: number;
   disturbancesCount: number;
+  recentStormsCount?: number;
   lastUpdated: string;
+  nextUpdateAt?: string;
 }
 
 interface Storm {
