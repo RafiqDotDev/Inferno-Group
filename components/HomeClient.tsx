@@ -126,7 +126,7 @@ export default function HomeClient() {
       setAbout(dataStore.getAbout());
       setHero(dataStore.getHero());
       setCommunityStories(
-        dataStore.getCommunityStories().filter((s) => s.status === "published")
+        dataStore.getCommunityStories().filter((s) => s.status === "published"),
       );
     };
 
@@ -1254,69 +1254,6 @@ export default function HomeClient() {
           <TestimonialsCarousel />
         </RevealOnMount>
       </section>
-
-      {/* LATEST NEWS & INSIGHTS PREVIEW SECTION */}
-      {articles.length > 0 && (
-        <section
-          id="latest-news-preview"
-          className="py-24 px-[5vw] bg-[var(--panel-dark)] border-t border-[var(--border)]"
-        >
-          <RevealOnMount direction="left">
-            <div className="flex flex-wrap justify-between items-end gap-6 mb-14">
-              <div>
-                <div className="section-eyebrow">
-                  <TypewriterText
-                    text="Recent Bulletins"
-                    speed={40}
-                    delay={200}
-                  />
-                </div>
-                <h2 className="section-title">Latest Firm Intelligence</h2>
-              </div>
-              <Link href="/news" className="btn btn-secondary no-underline">
-                Explore News Center
-              </Link>
-            </div>
-          </RevealOnMount>
-
-          <div className="partner-grid grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-10">
-            {articles.map((art, idx) => (
-              <RevealOnMount
-                key={art.slug}
-                direction={
-                  ["left", "up", "right"][idx % 3] as "left" | "up" | "right"
-                }
-                delay={idx * 150}
-              >
-                <div className="partner-card flex flex-col justify-between min-h-[260px] p-9 bg-[var(--glass)] border border-[var(--border)] rounded-2xl h-full">
-                  <div>
-                    <span className="partner-badge mb-2 inline-block">
-                      {art.category}
-                    </span>
-                    <h3 className="text-[1.15rem] font-[family-name:var(--font-space-grotesk)] my-2 leading-[1.3] font-[750]">
-                      {art.title}
-                    </h3>
-                    <p className="text-xs text-[var(--text-muted)] leading-[1.5]">
-                      {art.summary}
-                    </p>
-                  </div>
-                  <div className="flex justify-between items-center mt-6 border-t border-[var(--border)] pt-4">
-                    <div className="text-[0.7rem] text-[var(--text-muted)]">
-                      {art.publishedDate}
-                    </div>
-                    <Link
-                      href={`/news/${art.slug}`}
-                      className="text-xs font-bold text-[var(--primary)] no-underline"
-                    >
-                      Read Bulletin &rarr;
-                    </Link>
-                  </div>
-                </div>
-              </RevealOnMount>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* TRASH DROP ZONE (APPEARS AT TOP WHEN DRAGGING QUIZ ICON) */}
       <div
