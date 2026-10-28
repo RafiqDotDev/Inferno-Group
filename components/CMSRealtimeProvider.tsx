@@ -29,42 +29,58 @@ export default function CMSRealtimeProvider() {
     }, 20_000);
 
     // 4. Supabase Realtime WebSocket Subscription on 'settings' table
-    const supabase = createClient();
-    const channel = supabase
-      .channel("inferno-cms-realtime-global")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "settings" },
-        (payload: any) => {
-          if (payload.new && payload.new.key) {
-            try {
-              const val =
-                typeof payload.new.value === "string"
-                  ? JSON.parse(payload.new.value)
-                  : payload.new.value;
-              localStorage.setItem(payload.new.key, JSON.stringify(val));
-              window.dispatchEvent(
-                new CustomEvent("cms-update", {
-                  detail: { key: payload.new.key, value: val },
-                })
-              );
+    let channel: any = null;
+    let supabase: any = null;
+    try {
+      supabase = createClient();
+      channel = supabase
+        .channel("inferno-cms-realtime-global")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "settings" },
+          (payload: any) => {
+            if (payload.new && payload.new.key) {
               try {
-                window.dispatchEvent(new StorageEvent("storage", { key: payload.new.key }));
-              } catch {
-                window.dispatchEvent(new Event("storage"));
+                const val =
+                  typeof payload.new.value === "string"
+                    ? JSON.parse(payload.new.value)
+                    : payload.new.value;
+                try {
+                  localStorage.setItem(payload.new.key, JSON.stringify(val));
+                } catch {
+                  // Ignore storage quota in private browsing
+                }
+                window.dispatchEvent(
+                  new CustomEvent("cms-update", {
+                    detail: { key: payload.new.key, value: val },
+                  })
+                );
+                try {
+                  window.dispatchEvent(new StorageEvent("storage", { key: payload.new.key }));
+                } catch {
+                  window.dispatchEvent(new Event("storage"));
+                }
+              } catch (err) {
+                console.warn("[Realtime Sync] Failed to parse updated payload:", err);
               }
-            } catch (err) {
-              console.warn("[Realtime Sync] Failed to parse updated payload:", err);
             }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("[CMS Realtime] Supabase subscription skipped or failed:", err);
+    }
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearInterval(interval);
-      void supabase.removeChannel(channel);
+      if (supabase && channel) {
+        try {
+          void supabase.removeChannel(channel);
+        } catch {
+          // ignore cleanup error
+        }
+      }
     };
   }, []);
 

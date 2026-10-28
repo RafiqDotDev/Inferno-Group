@@ -27,11 +27,11 @@ const securityHeaders = [
   },
   {
     key: "Cross-Origin-Opener-Policy",
-    value: "same-origin",
+    value: "same-origin-allow-popups",
   },
   {
     key: "Cross-Origin-Resource-Policy",
-    value: "same-origin",
+    value: "cross-origin",
   },
   {
     key: "Content-Security-Policy",
@@ -39,9 +39,10 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://unpkg.com https://cdn.jsdelivr.net",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
-      "font-src 'self' https://fonts.gstatic.com data:",
+      "font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://*.supabase.co https://www.nhc.noaa.gov",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.nhc.noaa.gov",
+      "frame-src 'self' https://www.google.com https://maps.google.com",
       "frame-ancestors 'none'",
       "object-src 'none'",
       "base-uri 'self'",

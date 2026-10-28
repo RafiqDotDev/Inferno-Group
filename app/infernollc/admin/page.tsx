@@ -1632,8 +1632,8 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setAuthEmail("admin@theinfernogroup.com");
-                    setAuthPassword("inferno2026");
+                    setAuthEmail(process.env.NEXT_PUBLIC_DEFAULT_ADMIN_EMAIL || "");
+                    setAuthPassword(process.env.NEXT_PUBLIC_DEFAULT_ADMIN_PASSWORD || "");
                   }}
                   className="text-xs text-[var(--primary)] font-bold hover:underline transition-colors cursor-pointer"
                 >

@@ -182,7 +182,11 @@ export default function HomeClient() {
     };
 
     if (quizRef.current) {
-      quizRef.current.setPointerCapture(e.pointerId);
+      try {
+        quizRef.current.setPointerCapture(e.pointerId);
+      } catch {
+        // Safe fallback on touch platforms where capture cannot be established
+      }
     }
   };
 
@@ -225,8 +229,14 @@ export default function HomeClient() {
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (quizRef.current && quizRef.current.hasPointerCapture(e.pointerId)) {
-      quizRef.current.releasePointerCapture(e.pointerId);
+    if (quizRef.current) {
+      try {
+        if (quizRef.current.hasPointerCapture(e.pointerId)) {
+          quizRef.current.releasePointerCapture(e.pointerId);
+        }
+      } catch {
+        // Safe fallback for pointer release
+      }
     }
     if (!dragStartRef.current.hasMoved) {
       const isDismissBtn = (e.target as HTMLElement).closest("[data-no-drag]");
@@ -383,24 +393,6 @@ export default function HomeClient() {
             </Link>
           </div>
         </RevealOnMount>
-
-        {/* Office Background Location Badge */}
-        <div className="office-location-tag">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--primary)"
-            strokeWidth="2.5"
-          >
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-            <circle cx="12" cy="10" r="3"></circle>
-          </svg>
-          <span>
-            TIG Emergency Operations &amp; Command Center • Orlando, FL
-          </span>
-        </div>
       </section>
 
       {/* STATISTICS STRIP (Scroll Animated) */}

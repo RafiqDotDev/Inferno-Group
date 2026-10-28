@@ -1396,13 +1396,34 @@ const defaultHero: HeroData = {
 
 // ── UTILITY FUNCTIONS ──
 
+// In-memory storage fallback to prevent crashes in iOS Safari Private Browsing mode or under strict privacy constraints
+const memoryFallbackStorage: Record<string, string> = {};
+
+function safeGetStorage(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return memoryFallbackStorage[key] ?? null;
+  }
+}
+
+function safeSetStorage(key: string, value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    memoryFallbackStorage[key] = value;
+  }
+}
+
 function getStoreItem<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") {
     return defaultValue;
   }
-  const stored = localStorage.getItem(key);
+  const stored = safeGetStorage(key);
   if (!stored) {
-    localStorage.setItem(key, JSON.stringify(defaultValue));
+    safeSetStorage(key, JSON.stringify(defaultValue));
     return defaultValue;
   }
   try {
@@ -1486,7 +1507,7 @@ function getStoreItem<T>(key: string, defaultValue: T): T {
     }
 
     if (migrated) {
-      localStorage.setItem(key, JSON.stringify(parsed));
+      safeSetStorage(key, JSON.stringify(parsed));
     }
 
     return parsed as T;
@@ -1497,7 +1518,7 @@ function getStoreItem<T>(key: string, defaultValue: T): T {
 
 function setStoreItem<T>(key: string, value: T): void {
   if (typeof window !== "undefined") {
-    localStorage.setItem(key, JSON.stringify(value));
+    safeSetStorage(key, JSON.stringify(value));
     // Immediately notify local components listening in the same window/tab
     window.dispatchEvent(new CustomEvent("cms-update", { detail: { key, value } }));
     try {
@@ -1790,7 +1811,7 @@ export const dataStore = {
         // Hydrate localStorage with remote values
         for (const [k, v] of Object.entries(remoteData)) {
           if (v !== undefined && v !== null) {
-            localStorage.setItem(k, JSON.stringify(v));
+            safeSetStorage(k, JSON.stringify(v));
           }
         }
 
@@ -1918,7 +1939,7 @@ export const dataStore = {
       try {
         const current = dataStore.getLeads();
         const updated = [newLead, ...current.filter((l) => l.id !== newLead.id)];
-        localStorage.setItem("inferno_leads", JSON.stringify(updated));
+        safeSetStorage("inferno_leads", JSON.stringify(updated));
         try {
           window.dispatchEvent(new StorageEvent("storage", { key: "inferno_leads" }));
         } catch {

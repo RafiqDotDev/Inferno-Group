@@ -6,6 +6,11 @@ export default function HeroCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    // Disable canvas animation on mobile to preserve GPU memory, prevent WebKit Jetsam termination, and save battery
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      return;
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -139,5 +144,5 @@ export default function HeroCanvas() {
     };
   }, []);
 
-  return <canvas id="hero-canvas" ref={canvasRef} />;
+  return <canvas id="hero-canvas" ref={canvasRef} className="hidden md:block" />;
 }
