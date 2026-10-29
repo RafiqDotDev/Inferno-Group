@@ -105,8 +105,6 @@ export default function Navbar() {
     { name: "Partnerships", href: "/partnerships" },
   ];
 
-  const isHomePage = pathname === "/";
-
   return (
     <>
       {settings?.emergencyBannerActive && (
@@ -128,7 +126,7 @@ export default function Navbar() {
         style={{
           top: settings?.emergencyBannerActive ? "36px" : "0px",
         }}
-        className={`${isScrolled ? "scrolled" : isHomePage ? "hero-nav-transparent" : ""}`}
+        className={`${isScrolled ? "scrolled" : "hero-nav-transparent"}`}
       >
       <Link
         href="/"
