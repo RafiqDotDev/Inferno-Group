@@ -138,7 +138,11 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+      background 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      padding 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
   nav.hero-nav-transparent {
     background: transparent !important;
@@ -2566,6 +2570,7 @@
   .reveal-left.active {
     opacity: 1;
     transform: translateX(0);
+    will-change: auto;
   }
 
   .reveal-right {
@@ -2579,6 +2584,7 @@
   .reveal-right.active {
     opacity: 1;
     transform: translateX(0);
+    will-change: auto;
   }
 
   .reveal-down {
@@ -2592,6 +2598,7 @@
   .reveal-down.active {
     opacity: 1;
     transform: translateY(0);
+    will-change: auto;
   }
 
   .reveal-fade {
@@ -2601,6 +2608,7 @@
   }
   .reveal-fade.active {
     opacity: 1;
+    will-change: auto;
   }
 
   /* ── TYPEWRITER ANIMATION & CURSOR ── */

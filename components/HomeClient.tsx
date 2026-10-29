@@ -21,10 +21,8 @@ function HeroInteractiveBackground({
 }: {
   fallbackImage: string;
 }) {
-  const [transformStyle, setTransformStyle] = useState<React.CSSProperties>({
-    transform: "scale(1.03) translate(0px, 0px)",
-    transition: "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
-  });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const { clientX, clientY } = e;
@@ -34,21 +32,32 @@ function HeroInteractiveBackground({
     const x = (clientX / innerWidth - 0.5) * 2;
     const y = (clientY / innerHeight - 0.5) * 2;
 
-    const moveX = x * -16;
-    const moveY = y * -16;
+    const moveX = (x * -16).toFixed(2);
+    const moveY = (y * -16).toFixed(2);
 
-    setTransformStyle({
-      transform: `scale(1.06) translate(${moveX.toFixed(2)}px, ${moveY.toFixed(2)}px)`,
-      transition: "transform 0.15s ease-out",
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      if (containerRef.current) {
+        containerRef.current.style.transform = `scale(1.06) translate(${moveX}px, ${moveY}px)`;
+        containerRef.current.style.transition = "transform 0.15s ease-out";
+      }
     });
   };
 
   const handleMouseLeave = () => {
-    setTransformStyle({
-      transform: "scale(1.03) translate(0px, 0px)",
-      transition: "transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
-    });
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (containerRef.current) {
+      containerRef.current.style.transform = "scale(1.03) translate(0px, 0px)";
+      containerRef.current.style.transition =
+        "transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)";
+    }
   };
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   return (
     <div
@@ -57,8 +66,12 @@ function HeroInteractiveBackground({
       onMouseLeave={handleMouseLeave}
     >
       <div
+        ref={containerRef}
         className="w-full h-full absolute inset-0 pointer-events-none"
-        style={transformStyle}
+        style={{
+          transform: "scale(1.03) translate(0px, 0px)",
+          transition: "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
       >
         <picture className="w-full h-full absolute inset-0 block">
           <source media="(max-width: 768px)" srcSet="/mobile-hero-image.jpg" />
@@ -104,6 +117,7 @@ export default function HomeClient() {
 
   const quizRef = useRef<HTMLDivElement>(null);
   const isHoveringTrashRef = useRef(false);
+  const dragRafRef = useRef<number | null>(null);
   const dragStartRef = useRef<{
     startX: number;
     startY: number;
@@ -207,31 +221,35 @@ export default function HomeClient() {
     }
 
     if (dragStartRef.current.hasMoved) {
-      const iconSize = 60;
-      const padding = 16;
+      if (dragRafRef.current) cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = requestAnimationFrame(() => {
+        const iconSize = 60;
+        const padding = 16;
 
-      let newX = dragStartRef.current.initialX + dx;
-      let newY = dragStartRef.current.initialY + dy;
+        let newX = dragStartRef.current.initialX + dx;
+        let newY = dragStartRef.current.initialY + dy;
 
-      const maxX = window.innerWidth - iconSize - padding;
-      const maxY = window.innerHeight - iconSize - padding;
+        const maxX = window.innerWidth - iconSize - padding;
+        const maxY = window.innerHeight - iconSize - padding;
 
-      newX = Math.max(padding, Math.min(newX, maxX));
-      newY = Math.max(padding, Math.min(newY, maxY));
+        newX = Math.max(padding, Math.min(newX, maxX));
+        newY = Math.max(padding, Math.min(newY, maxY));
 
-      setQuizPos({ x: newX, y: newY });
+        setQuizPos({ x: newX, y: newY });
 
-      // Collision detection with top Trash drop zone
-      const iconCenterX = newX + iconSize / 2;
-      const isOverTrash =
-        newY <= 110 && Math.abs(iconCenterX - window.innerWidth / 2) < 140;
+        // Collision detection with top Trash drop zone
+        const iconCenterX = newX + iconSize / 2;
+        const isOverTrash =
+          newY <= 110 && Math.abs(iconCenterX - window.innerWidth / 2) < 140;
 
-      isHoveringTrashRef.current = isOverTrash;
-      setIsHoveringTrash(isOverTrash);
+        isHoveringTrashRef.current = isOverTrash;
+        setIsHoveringTrash(isOverTrash);
+      });
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragRafRef.current) cancelAnimationFrame(dragRafRef.current);
     if (quizRef.current) {
       try {
         if (quizRef.current.hasPointerCapture(e.pointerId)) {

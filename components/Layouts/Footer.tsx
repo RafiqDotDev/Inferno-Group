@@ -42,7 +42,13 @@ export default function Footer() {
         <div className="footer-brand">
           <Link href="/" className="footer-logo inline-flex items-center gap-3 mb-4 no-underline">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="The Inferno Group Logo" className="h-10 w-auto object-contain rounded-md" />
+            <img
+              src="/logo.png"
+              alt="The Inferno Group Logo"
+              loading="lazy"
+              decoding="async"
+              className="h-10 w-auto object-contain rounded-md"
+            />
             <span className="font-[family-name:var(--font-space-grotesk)] text-[1.15rem] font-bold tracking-tight text-[var(--text-bright)] leading-tight">
               The <span className="text-[var(--primary)]">Inferno</span> Group
             </span>
