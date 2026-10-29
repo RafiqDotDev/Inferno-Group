@@ -66,6 +66,9 @@ function HeroInteractiveBackground({
           <img
             src={fallbackImage}
             alt="The Inferno Group Emergency Operations Command Center"
+            fetchPriority="high"
+            loading="eager"
+            decoding="async"
             className="hero-fallback-image object-cover object-center lg:object-[65%_center] w-full h-full"
           />
         </picture>
@@ -995,6 +998,8 @@ export default function HomeClient() {
                               : "/impact_debris.png"
                           }
                           alt="The Inferno Ignite Scholarship Recipients"
+                          loading="lazy"
+                          decoding="async"
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).src =
                               "/impact_debris.png";
@@ -1058,6 +1063,8 @@ export default function HomeClient() {
                           <img
                             src={thumb.src}
                             alt={thumb.label}
+                            loading="lazy"
+                            decoding="async"
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).src =
                                 thumb.fallback;
@@ -1077,6 +1084,8 @@ export default function HomeClient() {
                     <img
                       src="/kickball_tournament.png"
                       alt="Kicking for Relief Charity Kickball Tournament"
+                      loading="lazy"
+                      decoding="async"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src =
                           "/impact_texas.png";

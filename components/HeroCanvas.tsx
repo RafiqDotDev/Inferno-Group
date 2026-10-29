@@ -120,9 +120,28 @@ export default function HeroCanvas() {
       }
     };
 
+    let isVisible = true;
+    let isTabActive =
+      typeof document !== "undefined"
+        ? document.visibilityState === "visible"
+        : true;
+    let isRunning = false;
     let animationFrameId: number;
 
+    const startAnimation = () => {
+      if (!isRunning && isVisible && isTabActive) {
+        isRunning = true;
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+
+    const stopAnimation = () => {
+      isRunning = false;
+      cancelAnimationFrame(animationFrameId);
+    };
+
     const animate = () => {
+      if (!isRunning) return;
       ctx.clearRect(0, 0, width, height);
       drawGridLines();
 
@@ -134,13 +153,39 @@ export default function HeroCanvas() {
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        isVisible = entry ? entry.isIntersecting : true;
+        if (isVisible) {
+          startAnimation();
+        } else {
+          stopAnimation();
+        }
+      },
+      { threshold: 0.05 },
+    );
+    observer.observe(canvas);
+
+    const handleVisibilityChange = () => {
+      isTabActive = document.visibilityState === "visible";
+      if (isTabActive) {
+        startAnimation();
+      } else {
+        stopAnimation();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    startAnimation();
 
     return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseleave", handleMouseLeave);
-      cancelAnimationFrame(animationFrameId);
+      stopAnimation();
     };
   }, []);
 

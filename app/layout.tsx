@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import Navbar from "@/components/Layouts/Navbar";
 import Footer from "@/components/Layouts/Footer";
-import Chatbot from "@/components/Chatbot";
 import TrackerAlert from "@/components/TrackerAlert";
 import CMSRealtimeProvider from "@/components/CMSRealtimeProvider";
 import "./globals.css";
 
+const Chatbot = dynamic(() => import("@/components/Chatbot"));
+
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://theinfernogroup.com",
+  ),
   title: "The Inferno Group LLC | Government Consulting & Emergency Management Services",
   description: "The Inferno Group LLC is a premier government consulting firm specializing in Emergency Management, disaster recovery, public & individual assistance, SAM.gov registration, and strategic business development.",
 };

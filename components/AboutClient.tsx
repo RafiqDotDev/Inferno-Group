@@ -259,6 +259,9 @@ export default function AboutClient() {
                 <img
                   src="/hero-bg.jpg"
                   alt="The Inferno Group Emergency Management Headquarters"
+                  fetchPriority="high"
+                  loading="eager"
+                  decoding="async"
                   className="w-full h-full object-cover opacity-85 transition-transform duration-700 hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[var(--panel-dark)] via-[rgba(15,23,42,0.4)] to-transparent"></div>
@@ -269,6 +272,8 @@ export default function AboutClient() {
                   <img
                     src="/logo.png"
                     alt="The Inferno Group"
+                    loading="eager"
+                    decoding="async"
                     className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-contain shadow-sm shrink-0"
                   />
                   <div>
@@ -617,6 +622,8 @@ export default function AboutClient() {
                           : "/logo.png"
                       }
                       alt={member.name}
+                      loading="lazy"
+                      decoding="async"
                       onError={(e) => {
                         const target = e.currentTarget;
                         if (!target.src.includes("logo.png")) {
@@ -731,6 +738,8 @@ export default function AboutClient() {
                                 : "/hero-bg.jpg"
                             }
                             alt={story.title}
+                            loading="lazy"
+                            decoding="async"
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).src =
                                 story.id.includes("scholarship")
@@ -781,6 +790,8 @@ export default function AboutClient() {
                             <img
                               src={photo}
                               alt=""
+                              loading="lazy"
+                              decoding="async"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).src =
                                   story.id.includes("scholarship")
@@ -993,6 +1004,8 @@ export default function AboutClient() {
                       : "/logo.png"
                   }
                   alt={selectedMember.name}
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => {
                     const target = e.currentTarget;
                     if (!target.src.includes("logo.png")) {
