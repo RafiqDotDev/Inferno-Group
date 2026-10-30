@@ -1,3 +1,9 @@
+export interface PartnerCard {
+  badge: string;
+  title: string;
+  desc: string;
+}
+
 export const partnerCardsData: PartnerCard[] = [
   {
     badge: "Prime Teaming",

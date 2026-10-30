@@ -68,7 +68,7 @@ export default function FAQPage() {
     <div className="page-view block">
       <section id="faq">
         <RevealOnMount className={`reveal ${isMounted ? "active" : ""}`}>
-          <h2 className="section-title">Frequently Asked Questions</h2>
+          <h1 className="section-title">Frequently Asked Questions</h1>
           <p className="section-desc max-w-[800px] mx-auto mb-8">
             Answers regarding The Inferno Group LLC&apos;s federal credentials
             (UEI / CAGE), HUBZone &amp; VOSB status, emergency response

@@ -519,6 +519,19 @@ function getTabIcon(tabId: string) {
   }
 }
 
+function getPaginationRange(current: number, total: number): number[] {
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 3) {
+    return [1, 2, 3, 4, total];
+  }
+  if (current >= total - 2) {
+    return [1, total - 3, total - 2, total - 1, total];
+  }
+  return [1, current - 1, current, current + 1, total];
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -621,6 +634,24 @@ export default function AdminPage() {
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [activeSlotsCount, setActiveSlotsCount] = useState<number | null>(null);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [liveSlotsList, setLiveSlotsList] = useState<any[]>([]);
+  const [showSlotsGrid, setShowSlotsGrid] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
+  const [isDelayModalOpen, setIsDelayModalOpen] = useState(false);
+  const [delayMinutes, setDelayMinutes] = useState(10);
+  const [delayReason, setDelayReason] = useState("");
+  const [customMeetingUrl, setCustomMeetingUrl] = useState("");
+  const [isUpdatingBooking, setIsUpdatingBooking] = useState(false);
+
+  // ── PAGINATION STATE ──
+  const [leadCurrentPage, setLeadCurrentPage] = useState(1);
+  const [leadPageSize, setLeadPageSize] = useState(10);
+  const [bookingCurrentPage, setBookingCurrentPage] = useState(1);
+  const [bookingPageSize, setBookingPageSize] = useState(10);
+
+  // ── DEDICATED LEADS CRM STATE ──
+  const [isLoadingLeads, setIsLoadingLeads] = useState(false);
+  const leadsFetchedRef = useRef(false);
 
   // ── SUPABASE DATABASE CMS SYNC STATE ──
   const [dbSyncStatus, setDbSyncStatus] = useState<
@@ -664,9 +695,34 @@ export default function AdminPage() {
     }
   }, [supabase]);
 
+  // ── DEDICATED LEADS FETCHER (Isolated from CMS setting cycles) ──
+  const fetchLeads = useCallback(async (showToastNotice = false) => {
+    setIsLoadingLeads(true);
+    try {
+      const res = await fetch("/api/leads");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.leads)) {
+          setLeads(json.leads);
+          dataStore.saveLeads(json.leads);
+          leadsFetchedRef.current = true;
+          if (showToastNotice) {
+            showToast(`Loaded ${json.leads.length} leads from database.`);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Unable to load leads from /api/leads:", err);
+      if (showToastNotice) {
+        showToast("Error loading leads from database.");
+      }
+    } finally {
+      setIsLoadingLeads(false);
+    }
+  }, []);
+
   // ── LOAD ALL CMS DATA ──
   const loadAllData = useCallback(() => {
-    setLeads(dataStore.getLeads());
     setHero(dataStore.getHero());
     setStats(dataStore.getStats());
     setAiFeatures(dataStore.getAIInnovation());
@@ -752,6 +808,7 @@ export default function AdminPage() {
           setIsAuthenticated(true);
           setUserEmail(session.user.email ?? "Admin");
           loadAllData();
+          void fetchLeads();
           void handleSyncFromSupabase(true);
           return;
         }
@@ -762,7 +819,14 @@ export default function AdminPage() {
     };
 
     void checkAuth();
-  }, [loadAllData, supabase]);
+  }, [fetchLeads, loadAllData, supabase]);
+
+  // Refetch leads whenever the user switches to the Leads CRM tab
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "leads") {
+      void fetchLeads();
+    }
+  }, [activeTab, fetchLeads, isAuthenticated]);
 
   // Keep browser-stored CMS content current across tabs and refresh bookings live.
   useEffect(() => {
@@ -843,46 +907,6 @@ export default function AdminPage() {
     };
   }, [fetchSupabaseBookings, isAuthenticated, loadAllData, supabase]);
 
-  // ── AUTOMATIC CMS SYNC ON FORM EDITS (Debounced 1.5s) ──
-  const heroInitialRef = useRef(true);
-  useEffect(() => {
-    if (heroInitialRef.current) {
-      if (hero) heroInitialRef.current = false;
-      return;
-    }
-    if (!hero) return;
-    const t = setTimeout(() => {
-      dataStore.saveHero(hero);
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [hero]);
-
-  const aboutInitialRef = useRef(true);
-  useEffect(() => {
-    if (aboutInitialRef.current) {
-      if (about) aboutInitialRef.current = false;
-      return;
-    }
-    if (!about) return;
-    const t = setTimeout(() => {
-      dataStore.saveAbout(about);
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [about]);
-
-  const settingsInitialRef = useRef(true);
-  useEffect(() => {
-    if (settingsInitialRef.current) {
-      if (siteSettings) settingsInitialRef.current = false;
-      return;
-    }
-    if (!siteSettings) return;
-    const t = setTimeout(() => {
-      dataStore.saveSiteSettings(siteSettings);
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [siteSettings]);
-
   // ── AUTH HANDLERS ──
   const handlePasswordSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -901,6 +925,7 @@ export default function AdminPage() {
         setIsAuthenticated(true);
         setUserEmail(data.session.user.email ?? "admin@theinfernogroup.com");
         loadAllData();
+        void fetchLeads();
         showToast("Authenticated via Supabase Auth.");
       }
     } catch (error) {
@@ -958,7 +983,7 @@ export default function AdminPage() {
   };
 
   // ── CRM ACTIONS ──
-  const updateLeadStatus = (
+  const updateLeadStatus = async (
     leadId: string,
     status: "new" | "reviewed" | "contacted" | "archived",
   ) => {
@@ -969,9 +994,18 @@ export default function AdminPage() {
       setSelectedLead({ ...selectedLead, status });
     }
     showToast(`Lead marked as ${status.toUpperCase()} & synced to Supabase`);
+    try {
+      await fetch("/api/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: leadId, status }),
+      });
+    } catch (err) {
+      console.warn("Async lead update sync error:", err);
+    }
   };
 
-  const saveLeadAdminNotes = (leadId: string, adminNotes: string) => {
+  const saveLeadAdminNotes = async (leadId: string, adminNotes: string) => {
     const updated = leads.map((l) =>
       l.id === leadId ? { ...l, adminNotes } : l,
     );
@@ -981,9 +1015,18 @@ export default function AdminPage() {
       setSelectedLead({ ...selectedLead, adminNotes });
     }
     showToast("Admin notes updated & synced to Supabase.");
+    try {
+      await fetch("/api/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: leadId, adminNotes }),
+      });
+    } catch (err) {
+      console.warn("Async lead notes sync error:", err);
+    }
   };
 
-  const deleteLead = (leadId: string) => {
+  const deleteLead = async (leadId: string) => {
     if (
       !confirm("Are you sure you want to permanently delete this transmission?")
     )
@@ -993,6 +1036,13 @@ export default function AdminPage() {
     dataStore.saveLeads(updated);
     if (selectedLead?.id === leadId) setSelectedLead(null);
     showToast("Transmission record deleted & synced to Supabase.");
+    try {
+      await fetch(`/api/leads?id=${encodeURIComponent(leadId)}`, {
+        method: "DELETE",
+      });
+    } catch (err) {
+      console.warn("Async lead delete error:", err);
+    }
   };
 
   const exportLeadsCSV = () => {
@@ -1158,18 +1208,226 @@ export default function AdminPage() {
   const handleInspectSlots = async () => {
     setIsLoadingSlots(true);
     try {
-      const res = await fetch("/api/bookings/slots?days=7");
+      const res = await fetch("/api/bookings/slots?days=14");
       const data = await res.json();
       if (data.slots) {
+        setLiveSlotsList(data.slots);
         setActiveSlotsCount(data.slots.length);
+        setShowSlotsGrid(true);
         showToast(
-          `Retrieved ${data.slots.length} available slots for the next 7 business days.`,
+          `Retrieved ${data.slots.length} available slots for the next 14 days.`,
         );
       }
     } catch (err: any) {
       alert("Failed to query live slots: " + err.message);
     } finally {
       setIsLoadingSlots(false);
+    }
+  };
+
+  // ── BOOKING MANAGEMENT & ACTION HANDLERS ──
+  const handleSelectBooking = (b: any) => {
+    setSelectedBooking(b);
+    setCustomMeetingUrl(b.meeting_url || "");
+  };
+
+  const handleSelectSlot = (slot: any) => {
+    // Find matching booking if this slot is already booked
+    const matching = combinedBookings.find(
+      (b) =>
+        (b.raw?.slot_id && b.raw.slot_id === slot.id) ||
+        (b.slot_date === new Date(slot.start_time).toLocaleDateString() &&
+          b.slot_time ===
+            new Date(slot.start_time).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })),
+    );
+    if (matching) {
+      handleSelectBooking(matching);
+    } else {
+      // Create a virtual booking view for this slot
+      const virtual = {
+        id: slot.id,
+        full_name: "Available / Unassigned",
+        email: "operations@theinfernogroup.com",
+        phone: "N/A",
+        company: "The Inferno Group Consultation Desk",
+        meeting_type: "Strategy Consultation",
+        created_at: slot.start_time,
+        slot_date: new Date(slot.start_time).toLocaleDateString(),
+        slot_time: new Date(slot.start_time).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        timezone: slot.timezone || "EST",
+        status: slot.is_available ? "available" : "reserved",
+        meeting_url: `https://meet.google.com/lookup/tig-${slot.id ? slot.id.slice(0, 8) : "consultation"}`,
+        delay_minutes: 0,
+        delay_message: "",
+        notes: `Live calendar slot (${new Date(slot.start_time).toLocaleString()} – ${new Date(slot.end_time).toLocaleTimeString()}). Click 'Join Video Room' to test audio/video environment.`,
+        source: "Live Calendar Inventory",
+        raw: slot,
+      };
+      handleSelectBooking(virtual);
+    }
+  };
+
+  const handleJoinMeeting = (b: any) => {
+    const targetUrl =
+      b.meeting_url ||
+      b.raw?.meeting_url ||
+      `https://meet.google.com/lookup/tig-${b.id ? b.id.slice(0, 8) : "consultation"}`;
+    window.open(targetUrl, "_blank", "noopener,noreferrer");
+    showToast(`Opening meeting room for ${b.full_name}...`);
+  };
+
+  const handleConfirmBooking = async (b: any) => {
+    setIsUpdatingBooking(true);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: b.id, status: "confirmed" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setDbBookings((prev) =>
+          prev.map((item) =>
+            item.id === b.id ? { ...item, status: "confirmed" } : item,
+          ),
+        );
+        setSelectedBooking((prev: any) =>
+          prev ? { ...prev, status: "confirmed" } : null,
+        );
+        showToast(`Consultation with ${b.full_name} confirmed.`);
+      } else {
+        setSelectedBooking((prev: any) =>
+          prev ? { ...prev, status: "confirmed" } : null,
+        );
+        showToast("Consultation marked as confirmed.");
+      }
+    } catch {
+      showToast("Consultation marked as confirmed.");
+    } finally {
+      setIsUpdatingBooking(false);
+    }
+  };
+
+  const handleSaveMeetingUrl = async (id: string, meeting_url: string) => {
+    if (!meeting_url) return;
+    setIsUpdatingBooking(true);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, meeting_url }),
+      });
+      if (res.ok) {
+        setDbBookings((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, meeting_url } : item,
+          ),
+        );
+        setSelectedBooking((prev: any) =>
+          prev ? { ...prev, meeting_url } : null,
+        );
+        showToast("Custom meeting room URL saved.");
+      } else {
+        setSelectedBooking((prev: any) =>
+          prev ? { ...prev, meeting_url } : null,
+        );
+        showToast("Meeting URL updated.");
+      }
+    } catch {
+      showToast("Meeting URL updated.");
+    } finally {
+      setIsUpdatingBooking(false);
+    }
+  };
+
+  const handleApplyDelay = async (b: any, minutes: number, reason: string) => {
+    setIsUpdatingBooking(true);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: b.id,
+          delay_minutes: minutes,
+          delay_message: reason,
+          status: "delayed",
+        }),
+      });
+      if (res.ok) {
+        setDbBookings((prev) =>
+          prev.map((item) =>
+            item.id === b.id
+              ? {
+                  ...item,
+                  delay_minutes: minutes,
+                  delay_message: reason,
+                  status: "delayed",
+                }
+              : item,
+          ),
+        );
+      }
+      setSelectedBooking((prev: any) =>
+        prev
+          ? {
+              ...prev,
+              delay_minutes: minutes,
+              delay_message: reason,
+              status: "delayed",
+            }
+          : null,
+      );
+      setIsDelayModalOpen(false);
+      showToast(`Delay notice recorded: +${minutes} minutes.`);
+    } catch {
+      setIsDelayModalOpen(false);
+      showToast(`Delay (+${minutes}m) saved.`);
+    } finally {
+      setIsUpdatingBooking(false);
+    }
+  };
+
+  const handleSendDelayEmail = (b: any, minutes: number, reason: string) => {
+    const subject = encodeURIComponent(
+      `Update regarding our upcoming consultation: The Inferno Group (+${minutes}m)`,
+    );
+    const body = encodeURIComponent(
+      `Hi ${b.full_name},\n\nPlease note our consultation scheduled for ${b.slot_date} at ${b.slot_time} (${b.timezone}) will begin approximately ${minutes} minutes late.\n\n${reason ? `Reason / Note: ${reason}\n\n` : ""}Meeting Link: ${b.meeting_url || `https://meet.google.com/lookup/tig-${b.id ? b.id.slice(0, 8) : "consultation"}`}\n\nThank you for your understanding.\n\nBest regards,\nExecutive Operations Team\nThe Inferno Group\nhttps://theinfernogroup.com`,
+    );
+    window.open(`mailto:${b.email}?subject=${subject}&body=${body}`, "_blank");
+    handleApplyDelay(b, minutes, reason);
+  };
+
+  const handleDeleteBooking = async (id: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to cancel this booking and free up the consultation slot?",
+      )
+    )
+      return;
+    setIsUpdatingBooking(true);
+    try {
+      const res = await fetch(`/api/bookings?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setDbBookings((prev) => prev.filter((b) => b.id !== id));
+        setSelectedBooking(null);
+        showToast("Booking cancelled and slot restored to available.");
+        void fetchSupabaseBookings();
+      } else {
+        alert("Failed to cancel booking via server API.");
+      }
+    } catch (err: any) {
+      alert("Error cancelling booking: " + err.message);
+    } finally {
+      setIsUpdatingBooking(false);
     }
   };
 
@@ -1258,20 +1516,27 @@ export default function AdminPage() {
         id: l.id,
         full_name: l.name || "Anonymous Client",
         email: l.email || "N/A",
+        phone: l.phone || "N/A",
         company: l.company || "N/A",
         meeting_type: l.consultType || "Consultation",
         created_at: l.createdAt,
         slot_date: l.date || "Scheduled",
         slot_time: l.time || "",
         timezone: l.timezone || "EST",
-        notes: l.notes || "",
+        status: (l as any).status || "confirmed",
+        meeting_url: (l as any).meeting_url || "",
+        delay_minutes: (l as any).delay_minutes || 0,
+        delay_message: (l as any).delay_message || "",
+        notes: l.notes || l.message || "",
         source: "Local Transmission",
+        raw: l,
       }));
 
     const remote = dbBookings.map((b) => ({
       id: b.id,
       full_name: b.full_name,
       email: b.email,
+      phone: b.phone || "N/A",
       company: b.company || "N/A",
       meeting_type: b.meeting_type,
       created_at: b.created_at,
@@ -1285,12 +1550,44 @@ export default function AdminPage() {
           })
         : "N/A",
       timezone: b.booking_slots?.timezone || "EST",
+      status: b.status || "pending",
+      meeting_url: b.meeting_url || "",
+      delay_minutes: b.delay_minutes || 0,
+      delay_message: b.delay_message || "",
       notes: b.notes || "",
       source: "Supabase Database",
+      raw: b,
     }));
 
     return [...remote, ...localBookings];
   }, [leads, dbBookings]);
+
+  // ── PAGINATION COMPUTATIONS & AUTO-RESETS ──
+  const totalLeadPages = Math.max(
+    1,
+    Math.ceil(filteredLeads.length / leadPageSize),
+  );
+  const paginatedLeads = useMemo(() => {
+    const start = (leadCurrentPage - 1) * leadPageSize;
+    return filteredLeads.slice(start, start + leadPageSize);
+  }, [filteredLeads, leadCurrentPage, leadPageSize]);
+
+  const totalBookingPages = Math.max(
+    1,
+    Math.ceil(combinedBookings.length / bookingPageSize),
+  );
+  const paginatedBookings = useMemo(() => {
+    const start = (bookingCurrentPage - 1) * bookingPageSize;
+    return combinedBookings.slice(start, start + bookingPageSize);
+  }, [combinedBookings, bookingCurrentPage, bookingPageSize]);
+
+  useEffect(() => {
+    setLeadCurrentPage(1);
+  }, [leadTypeFilter, leadStatusFilter, leadSearch, leadPageSize]);
+
+  useEffect(() => {
+    setBookingCurrentPage(1);
+  }, [bookingPageSize]);
 
   const recentLeads = useMemo(
     () =>
@@ -2834,7 +3131,7 @@ export default function AdminPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[var(--border)]">
-                        {filteredLeads.map((lead) => (
+                        {paginatedLeads.map((lead) => (
                           <tr
                             key={lead.id}
                             className="hover:bg-[var(--adm-card-subtle)]/80 transition-colors"
@@ -2935,6 +3232,101 @@ export default function AdminPage() {
                         ))}
                       </tbody>
                     </table>
+
+                    {/* Leads Pagination Bar */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3.5 bg-[var(--adm-card-subtle)] border-t border-[var(--adm-card-border)] text-xs text-[var(--adm-text-muted)] font-[family-name:var(--font-space-grotesk)]">
+                      <div className="flex items-center gap-2">
+                        <span>
+                          Showing{" "}
+                          <strong className="text-[var(--adm-text-primary)]">
+                            {filteredLeads.length === 0
+                              ? 0
+                              : (leadCurrentPage - 1) * leadPageSize + 1}
+                            –
+                            {Math.min(
+                              leadCurrentPage * leadPageSize,
+                              filteredLeads.length,
+                            )}
+                          </strong>{" "}
+                          of{" "}
+                          <strong className="text-[var(--adm-text-primary)]">
+                            {filteredLeads.length}
+                          </strong>{" "}
+                          transmissions
+                        </span>
+                        <div className="flex items-center gap-1.5 ml-3">
+                          <span className="text-[var(--adm-text-muted)]">Per page:</span>
+                          <select
+                            value={leadPageSize}
+                            onChange={(e) => {
+                              setLeadPageSize(Number(e.target.value));
+                              setLeadCurrentPage(1);
+                            }}
+                            className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] text-[var(--adm-text-primary)] rounded-lg px-2 py-1 text-xs font-semibold cursor-pointer outline-none focus:border-[var(--primary)]"
+                          >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setLeadCurrentPage(1)}
+                          disabled={leadCurrentPage === 1}
+                          className="px-2.5 py-1 rounded-lg border border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--adm-card-subtle)] cursor-pointer transition-colors"
+                          title="First page"
+                        >
+                          «
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLeadCurrentPage((p) => Math.max(1, p - 1))}
+                          disabled={leadCurrentPage === 1}
+                          className="px-2.5 py-1 rounded-lg border border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--adm-card-subtle)] cursor-pointer transition-colors"
+                          title="Previous page"
+                        >
+                          ‹ Prev
+                        </button>
+
+                        {getPaginationRange(leadCurrentPage, totalLeadPages).map((p, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setLeadCurrentPage(p)}
+                            className={`min-w-[28px] px-2 py-1 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+                              leadCurrentPage === p
+                                ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+                                : "border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] hover:bg-[var(--adm-card-subtle)]"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => setLeadCurrentPage((p) => Math.min(totalLeadPages, p + 1))}
+                          disabled={leadCurrentPage >= totalLeadPages}
+                          className="px-2.5 py-1 rounded-lg border border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--adm-card-subtle)] cursor-pointer transition-colors"
+                          title="Next page"
+                        >
+                          Next ›
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLeadCurrentPage(totalLeadPages)}
+                          disabled={leadCurrentPage >= totalLeadPages}
+                          className="px-2.5 py-1 rounded-lg border border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--adm-card-subtle)] cursor-pointer transition-colors"
+                          title="Last page"
+                        >
+                          »
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -3050,6 +3442,51 @@ export default function AdminPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Booking Quick Launch to Consultation Modal */}
+                    {selectedLead.type === "BOOKING" && (
+                      <div className="p-4 bg-gradient-to-r from-[rgba(225,77,24,0.08)] to-[rgba(26,86,196,0.08)] border border-[rgba(225,77,24,0.2)] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <div className="text-xs font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                            Consultation Booking Record
+                          </div>
+                          <div className="text-xs text-[var(--adm-text-muted)] mt-0.5">
+                            Scheduled: <strong>{selectedLead.date || "Scheduled Slot"}</strong> at <strong>{selectedLead.time || ""}</strong> ({selectedLead.timezone || "EST"})
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const matching = combinedBookings.find((b) => b.id === selectedLead.id) || {
+                              id: selectedLead.id,
+                              full_name: selectedLead.name || "Client",
+                              email: selectedLead.email || "N/A",
+                              phone: selectedLead.phone || "N/A",
+                              company: selectedLead.company || "N/A",
+                              meeting_type: selectedLead.consultType || "Consultation",
+                              created_at: selectedLead.createdAt,
+                              slot_date: selectedLead.date || "Scheduled",
+                              slot_time: selectedLead.time || "",
+                              timezone: selectedLead.timezone || "EST",
+                              status: selectedLead.status || "confirmed",
+                              meeting_url: (selectedLead as any).meeting_url || "",
+                              delay_minutes: 0,
+                              delay_message: "",
+                              notes: selectedLead.notes || selectedLead.message || "",
+                              source: "Local Transmission",
+                              raw: selectedLead,
+                            };
+                            setSelectedLead(null);
+                            handleSelectBooking(matching);
+                          }}
+                          className="px-3.5 py-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white rounded-xl text-xs font-bold font-[family-name:var(--font-space-grotesk)] cursor-pointer shadow-xs inline-flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
+                        >
+                          <span>Open Consultation Desk</span>
+                          <span>→</span>
+                        </button>
+                      </div>
+                    )}
 
                     {/* Specific details */}
                     {/* Structured Employment Application Dossier */}
@@ -3441,12 +3878,91 @@ export default function AdminPage() {
                 </div>
               )}
 
+              {/* Live Slots Schedule Grid (Click ANY slot to open modal) */}
+              {liveSlotsList.length > 0 && (
+                <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl shadow-xs p-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Live Consultation Slots Inventory ({liveSlotsList.length} slots)
+                      </h3>
+                      <p className="text-xs text-[var(--adm-text-muted)] mt-0.5">
+                        Click on <strong>any booking slot</strong> to view full details, reserve, or join the meeting room.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSlotsGrid((prev) => !prev)}
+                      className="px-3 py-1.5 bg-[var(--adm-card-subtle)] hover:bg-[var(--adm-card)] border border-[var(--adm-card-border)] text-[var(--adm-text-primary)] text-xs font-semibold rounded-xl transition-all cursor-pointer font-[family-name:var(--font-space-grotesk)]"
+                    >
+                      {showSlotsGrid ? "Hide Slots Grid" : "Show Slots Grid"}
+                    </button>
+                  </div>
+
+                  {showSlotsGrid && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 pt-2">
+                      {liveSlotsList.map((slot) => {
+                        const start = new Date(slot.start_time);
+                        const end = new Date(slot.end_time);
+                        const isAvailable = slot.is_available;
+                        return (
+                          <button
+                            key={slot.id}
+                            type="button"
+                            onClick={() => handleSelectSlot(slot)}
+                            className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all active:scale-95 group font-[family-name:var(--font-space-grotesk)] ${
+                              isAvailable
+                                ? "bg-[var(--adm-card)] hover:bg-[var(--adm-card-subtle)] border-emerald-500/30 hover:border-emerald-500 shadow-2xs"
+                                : "bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/30 hover:border-amber-500 shadow-2xs"
+                            }`}
+                            title={`Click slot to open details: ${start.toLocaleString()}`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[0.68rem] font-bold uppercase text-[var(--adm-text-muted)]">
+                                {start.toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </span>
+                              <span
+                                className={`text-[0.65rem] font-bold px-1.5 py-0.2 rounded-full ${
+                                  isAvailable
+                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                                }`}
+                              >
+                                {isAvailable ? "OPEN" : "BOOKED"}
+                              </span>
+                            </div>
+                            <div className="text-xs font-bold text-[var(--adm-text-primary)] group-hover:text-[var(--primary)] transition-colors">
+                              {start.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                            <div className="text-[0.65rem] text-[var(--adm-text-muted)] mt-0.5 font-mono">
+                              {slot.timezone || "EST"} &bull; {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Booked Consultations List */}
-              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl shadow-xs p-6">
-                <h3 className="text-sm font-bold text-[var(--adm-text-primary)] mb-4 font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
-                  Scheduled Consultations ({combinedBookings.length})
-                </h3>
+              <div className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] rounded-2xl shadow-xs overflow-hidden">
+                <div className="p-6 pb-4">
+                  <h3 className="text-sm font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                    Scheduled Consultations ({combinedBookings.length})
+                  </h3>
+                  <p className="text-xs text-[var(--adm-text-muted)] mt-1">
+                    Click any slot card or details button to confirm, join video meeting, or send a delay notice to the client.
+                  </p>
+                </div>
 
                 {combinedBookings.length === 0 ? (
                   <div className="py-12 text-center text-[var(--adm-text-muted)] text-xs">
@@ -3461,19 +3977,19 @@ export default function AdminPage() {
                           <th className="py-3 px-4">Client Name</th>
                           <th className="py-3 px-4">Organization</th>
                           <th className="py-3 px-4">Scope</th>
-                          <th className="py-3 px-4">Scheduled Slot</th>
-                          <th className="py-3 px-4">Timezone</th>
-                          <th className="py-3 px-4">Source</th>
+                          <th className="py-3 px-4">Scheduled Slot (Clickable)</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[var(--border)]">
-                        {combinedBookings.map((b, idx) => (
+                        {paginatedBookings.map((b, idx) => (
                           <tr
-                            key={idx}
+                            key={b.id || idx}
                             className="hover:bg-[var(--adm-card-subtle)]/80 transition-colors"
                           >
                             <td className="py-3 px-4 font-bold text-[var(--adm-text-primary)]">
-                              {b.full_name}
+                              <div>{b.full_name}</div>
                               <div className="text-xs text-[var(--adm-text-muted)] font-medium">
                                 {b.email}
                               </div>
@@ -3486,22 +4002,475 @@ export default function AdminPage() {
                                 {b.meeting_type}
                               </span>
                             </td>
-                            <td className="py-3 px-4 font-bold text-[var(--adm-text-primary)]">
-                              {b.slot_date} &bull; {b.slot_time}
+                            <td className="py-3 px-4">
+                              <button
+                                type="button"
+                                onClick={() => handleSelectBooking(b)}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--adm-card-subtle)] hover:bg-[var(--adm-card)] hover:border-[var(--primary)] border border-[var(--adm-card-border)] rounded-xl text-left cursor-pointer transition-all group font-[family-name:var(--font-space-grotesk)] shadow-2xs"
+                                title="Click to open consultation details modal"
+                              >
+                                <span className="text-sm">📅</span>
+                                <div>
+                                  <div className="font-bold text-[var(--adm-text-primary)] text-xs group-hover:text-[var(--primary)] transition-colors">
+                                    {b.slot_date} &bull; {b.slot_time}
+                                  </div>
+                                  <div className="text-[0.68rem] text-[var(--adm-text-muted)] font-mono">
+                                    {b.timezone} &bull; Open Details →
+                                  </div>
+                                </div>
+                              </button>
                             </td>
-                            <td className="py-3 px-4 font-mono text-xs font-semibold text-[var(--adm-text-muted)]">
-                              {b.timezone}
+                            <td className="py-3 px-4">
+                              {b.delay_minutes > 0 ? (
+                                <span className="px-2.5 py-1 rounded-full text-[0.7rem] font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 inline-flex items-center gap-1 font-[family-name:var(--font-space-grotesk)]">
+                                  <span>⏳</span>
+                                  <span>DELAYED (+{b.delay_minutes}m)</span>
+                                </span>
+                              ) : b.status === "confirmed" ? (
+                                <span className="px-2.5 py-1 rounded-full text-[0.7rem] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-[family-name:var(--font-space-grotesk)]">
+                                  ✓ CONFIRMED
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-full text-[0.7rem] font-bold uppercase bg-[rgba(26,86,196,0.08)] text-[var(--secondary)] border border-[rgba(26,86,196,0.2)] font-[family-name:var(--font-space-grotesk)]">
+                                  ● PENDING
+                                </span>
+                              )}
                             </td>
-                            <td className="py-3 px-4 text-[var(--adm-text-muted)] text-xs font-medium">
-                              {b.source}
+                            <td className="py-3 px-4 text-right space-x-1.5 whitespace-nowrap font-[family-name:var(--font-space-grotesk)]">
+                              <button
+                                type="button"
+                                onClick={() => handleJoinMeeting(b)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-xs active:scale-95"
+                                title="Join Video Consultation Meeting"
+                              >
+                                <span>📹</span>
+                                <span>Join</span>
+                              </button>
+
+                              {b.status !== "confirmed" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleConfirmBooking(b)}
+                                  disabled={isUpdatingBooking}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-xs active:scale-95 disabled:opacity-50"
+                                  title="Confirm Consultation"
+                                >
+                                  <span>✓</span>
+                                  <span>Confirm</span>
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedBooking(b);
+                                  setIsDelayModalOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[var(--adm-card-subtle)] hover:bg-[var(--adm-card)] hover:border-amber-500 text-amber-600 dark:text-amber-400 border border-[var(--adm-card-border)] rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-2xs"
+                                title="Send Delay Notice to Client"
+                              >
+                                <span>⏳</span>
+                                <span>Delay</span>
+                              </button>
+
+                              <AdminViewButton
+                                onClick={() => handleSelectBooking(b)}
+                                label="Details"
+                                title="Inspect Consultation Dossier"
+                              />
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+
+                    {/* Bookings Pagination Bar */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3.5 bg-[var(--adm-card-subtle)] border-t border-[var(--adm-card-border)] text-xs text-[var(--adm-text-muted)] font-[family-name:var(--font-space-grotesk)]">
+                      <div className="flex items-center gap-2">
+                        <span>
+                          Showing{" "}
+                          <strong className="text-[var(--adm-text-primary)]">
+                            {combinedBookings.length === 0
+                              ? 0
+                              : (bookingCurrentPage - 1) * bookingPageSize + 1}
+                            –
+                            {Math.min(
+                              bookingCurrentPage * bookingPageSize,
+                              combinedBookings.length,
+                            )}
+                          </strong>{" "}
+                          of{" "}
+                          <strong className="text-[var(--adm-text-primary)]">
+                            {combinedBookings.length}
+                          </strong>{" "}
+                          consultations
+                        </span>
+                        <div className="flex items-center gap-1.5 ml-3">
+                          <span className="text-[var(--adm-text-muted)]">Per page:</span>
+                          <select
+                            value={bookingPageSize}
+                            onChange={(e) => {
+                              setBookingPageSize(Number(e.target.value));
+                              setBookingCurrentPage(1);
+                            }}
+                            className="bg-[var(--adm-card)] border border-[var(--adm-card-border)] text-[var(--adm-text-primary)] rounded-lg px-2 py-1 text-xs font-semibold cursor-pointer outline-none focus:border-[var(--primary)]"
+                          >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setBookingCurrentPage(1)}
+                          disabled={bookingCurrentPage === 1}
+                          className="px-2.5 py-1 rounded-lg border border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--adm-card-subtle)] cursor-pointer transition-colors"
+                          title="First page"
+                        >
+                          «
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBookingCurrentPage((p) => Math.max(1, p - 1))}
+                          disabled={bookingCurrentPage === 1}
+                          className="px-2.5 py-1 rounded-lg border border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--adm-card-subtle)] cursor-pointer transition-colors"
+                          title="Previous page"
+                        >
+                          ‹ Prev
+                        </button>
+
+                        {getPaginationRange(bookingCurrentPage, totalBookingPages).map((p, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setBookingCurrentPage(p)}
+                            className={`min-w-[28px] px-2 py-1 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+                              bookingCurrentPage === p
+                                ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+                                : "border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] hover:bg-[var(--adm-card-subtle)]"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => setBookingCurrentPage((p) => Math.min(totalBookingPages, p + 1))}
+                          disabled={bookingCurrentPage >= totalBookingPages}
+                          className="px-2.5 py-1 rounded-lg border border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--adm-card-subtle)] cursor-pointer transition-colors"
+                          title="Next page"
+                        >
+                          Next ›
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBookingCurrentPage(totalBookingPages)}
+                          disabled={bookingCurrentPage >= totalBookingPages}
+                          className="px-2.5 py-1 rounded-lg border border-[var(--adm-card-border)] bg-[var(--adm-card)] text-[var(--adm-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--adm-card-subtle)] cursor-pointer transition-colors"
+                          title="Last page"
+                        >
+                          »
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
+
+              {/* Consultation Dossier Modal */}
+              {selectedBooking && !isDelayModalOpen && (
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+                  <div className="bg-[var(--adm-card)] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5 animate-scale-up border border-[var(--adm-card-border)]">
+                    <div className="flex justify-between items-start border-b border-[var(--adm-card-border)] pb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-[rgba(225,77,24,0.08)] text-[var(--primary)] border border-[rgba(225,77,24,0.2)] font-[family-name:var(--font-space-grotesk)]">
+                            {selectedBooking.meeting_type}
+                          </span>
+                          {selectedBooking.delay_minutes > 0 ? (
+                            <span className="px-2.5 py-0.5 rounded-full text-[0.7rem] font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-[family-name:var(--font-space-grotesk)]">
+                              DELAYED (+{selectedBooking.delay_minutes}m)
+                            </span>
+                          ) : selectedBooking.status === "confirmed" ? (
+                            <span className="px-2.5 py-0.5 rounded-full text-[0.7rem] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-[family-name:var(--font-space-grotesk)]">
+                              CONFIRMED
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full text-[0.7rem] font-bold uppercase bg-[rgba(26,86,196,0.08)] text-[var(--secondary)] border border-[rgba(26,86,196,0.2)] font-[family-name:var(--font-space-grotesk)]">
+                              PENDING CONFIRMATION
+                            </span>
+                          )}
+                        </div>
+                        <h2 className="text-lg font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+                          {selectedBooking.full_name}
+                        </h2>
+                        <div className="text-xs text-[var(--adm-text-muted)] font-mono">
+                          ID: {selectedBooking.id} &bull; Source: {selectedBooking.source}
+                        </div>
+                      </div>
+                      <AdminModalCloseButton
+                        onClick={() => setSelectedBooking(null)}
+                        title="Close consultation dialog"
+                      />
+                    </div>
+
+                    {/* Join Meeting Action Box */}
+                    <div className="p-4 bg-gradient-to-r from-[rgba(225,77,24,0.08)] to-[rgba(26,86,196,0.08)] border border-[rgba(225,77,24,0.2)] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="text-xs font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)] flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                          Executive Consultation Video Bridge
+                        </div>
+                        <div className="text-xs text-[var(--adm-text-muted)] mt-0.5 font-mono">
+                          Slot: {selectedBooking.slot_date} &bull; {selectedBooking.slot_time} ({selectedBooking.timezone})
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleJoinMeeting(selectedBooking)}
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-95 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-md shadow-[var(--primary)]/20 active:scale-95 font-[family-name:var(--font-space-grotesk)] shrink-0"
+                      >
+                        <span className="text-base">📹</span>
+                        <span>Join Meeting Now</span>
+                      </button>
+                    </div>
+
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs bg-[var(--adm-card-subtle)] p-4 rounded-xl border border-[var(--adm-card-border)]">
+                      <div>
+                        <span className="text-[var(--adm-text-muted)] block">Email</span>
+                        <a
+                          href={`mailto:${selectedBooking.email}`}
+                          className="font-semibold text-[var(--primary)] hover:underline break-all"
+                        >
+                          {selectedBooking.email}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="text-[var(--adm-text-muted)] block">Phone</span>
+                        <a
+                          href={`tel:${selectedBooking.phone}`}
+                          className="font-semibold text-[var(--adm-text-primary)] hover:underline"
+                        >
+                          {selectedBooking.phone || "N/A"}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="text-[var(--adm-text-muted)] block">Company</span>
+                        <span className="font-semibold text-[var(--adm-text-primary)]">
+                          {selectedBooking.company || "N/A"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--adm-text-muted)] block">Scheduled Date</span>
+                        <span className="font-semibold text-[var(--adm-text-primary)]">
+                          {selectedBooking.slot_date}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--adm-text-muted)] block">Scheduled Time</span>
+                        <span className="font-semibold text-[var(--adm-text-primary)]">
+                          {selectedBooking.slot_time} ({selectedBooking.timezone})
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--adm-text-muted)] block">Created At</span>
+                        <span className="font-semibold text-[var(--adm-text-primary)] font-mono text-[0.7rem]">
+                          {selectedBooking.created_at ? new Date(selectedBooking.created_at).toLocaleString() : "N/A"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Meeting Link Configurator */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider font-[family-name:var(--font-space-grotesk)]">
+                        Meeting URL / Video Room Bridge
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={customMeetingUrl}
+                          onChange={(e) => setCustomMeetingUrl(e.target.value)}
+                          placeholder={`https://meet.google.com/lookup/tig-${selectedBooking.id ? selectedBooking.id.slice(0, 8) : "consultation"}`}
+                          className="flex-1 bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl px-3.5 py-2 text-xs font-mono text-[var(--adm-text-primary)] outline-none focus:bg-[var(--adm-card)] focus:border-[var(--primary)]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveMeetingUrl(selectedBooking.id, customMeetingUrl)}
+                          disabled={isUpdatingBooking}
+                          className="px-4 py-2 bg-[var(--adm-card-subtle)] hover:bg-[var(--adm-card)] border border-[var(--adm-card-border)] hover:border-[var(--primary)] text-[var(--adm-text-primary)] rounded-xl text-xs font-semibold transition-all cursor-pointer font-[family-name:var(--font-space-grotesk)] shrink-0 disabled:opacity-50"
+                        >
+                          Save Link
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Preliminary Notes */}
+                    {selectedBooking.notes && (
+                      <div className="space-y-1.5">
+                        <h4 className="text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider font-[family-name:var(--font-space-grotesk)]">
+                          Client Preliminary Notes &amp; Scope Requirements
+                        </h4>
+                        <div className="bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl p-3.5 text-xs text-[var(--adm-text-primary)] whitespace-pre-line leading-relaxed">
+                          {selectedBooking.notes}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Delay Notice Banner if delayed */}
+                    {selectedBooking.delay_minutes > 0 && (
+                      <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                        <div className="font-bold flex items-center gap-1.5 font-[family-name:var(--font-space-grotesk)]">
+                          <span>⏳ Delay Notice Active: +{selectedBooking.delay_minutes} Minutes</span>
+                        </div>
+                        {selectedBooking.delay_message && (
+                          <div className="italic text-[0.72rem] text-amber-800 dark:text-amber-200">
+                            &ldquo;{selectedBooking.delay_message}&rdquo;
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Dialog Actions */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[var(--adm-card-border)] font-[family-name:var(--font-space-grotesk)]">
+                      <div className="flex items-center gap-2">
+                        {selectedBooking.status !== "confirmed" && (
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmBooking(selectedBooking)}
+                            disabled={isUpdatingBooking}
+                            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50 inline-flex items-center gap-1.5"
+                          >
+                            <span>✓</span>
+                            <span>Confirm Consultation</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setIsDelayModalOpen(true)}
+                          className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 inline-flex items-center gap-1.5"
+                        >
+                          <span>⏳</span>
+                          <span>Send Delay Notice</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBooking(selectedBooking.id)}
+                          disabled={isUpdatingBooking}
+                          className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          Cancel Booking
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBooking(null)}
+                          className="px-4 py-2 bg-[var(--adm-card-subtle)] hover:bg-[var(--adm-card)] border border-[var(--adm-card-border)] hover:border-[var(--primary)] text-[var(--adm-text-primary)] rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Delay Notice Dispatch Modal */}
+              {isDelayModalOpen && selectedBooking && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+                  <div className="bg-[var(--adm-card)] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-scale-up border border-[var(--adm-card-border)]">
+                    <div className="flex justify-between items-start border-b border-[var(--adm-card-border)] pb-3">
+                      <div>
+                        <span className="text-[0.7rem] font-bold uppercase tracking-wider text-amber-500 font-[family-name:var(--font-space-grotesk)] block mb-0.5">
+                          Consultation Scheduling Notice
+                        </span>
+                        <h3 className="text-base font-bold text-[var(--adm-text-primary)] font-[family-name:var(--font-space-grotesk)]">
+                          Notify Client of Delay
+                        </h3>
+                      </div>
+                      <AdminModalCloseButton
+                        onClick={() => setIsDelayModalOpen(false)}
+                        title="Close delay dialog"
+                      />
+                    </div>
+
+                    <div className="p-3.5 bg-[var(--adm-card-subtle)] rounded-xl border border-[var(--adm-card-border)] text-xs text-[var(--adm-text-primary)]">
+                      <div>Client: <strong>{selectedBooking.full_name}</strong> ({selectedBooking.email})</div>
+                      <div className="text-[var(--adm-text-muted)] mt-0.5 font-mono">
+                        Scheduled: {selectedBooking.slot_date} &bull; {selectedBooking.slot_time} ({selectedBooking.timezone})
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider font-[family-name:var(--font-space-grotesk)]">
+                        Delay Interval Preset
+                      </label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[5, 10, 15, 30].map((mins) => (
+                          <button
+                            key={mins}
+                            type="button"
+                            onClick={() => setDelayMinutes(mins)}
+                            className={`py-2 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-all font-[family-name:var(--font-space-grotesk)] ${
+                              delayMinutes === mins
+                                ? "bg-amber-500 text-white border-amber-500 shadow-xs"
+                                : "bg-[var(--adm-card-subtle)] hover:bg-[var(--adm-card)] text-[var(--adm-text-primary)] border-[var(--adm-card-border)]"
+                            }`}
+                          >
+                            +{mins} min
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-[var(--adm-text-primary)] uppercase tracking-wider font-[family-name:var(--font-space-grotesk)]">
+                        Reason / Note for Client (Optional)
+                      </label>
+                      <textarea
+                        value={delayReason}
+                        onChange={(e) => setDelayReason(e.target.value)}
+                        placeholder="e.g. Concluding a government briefing, wrapping up previous defense advisory session..."
+                        className="w-full bg-[var(--adm-card-subtle)] border border-[var(--adm-card-border)] rounded-xl p-3 text-xs outline-none focus:bg-[var(--adm-card)] focus:border-[var(--primary)] min-h-[70px]"
+                      ></textarea>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-3 border-t border-[var(--adm-card-border)] font-[family-name:var(--font-space-grotesk)]">
+                      <button
+                        type="button"
+                        onClick={() => setIsDelayModalOpen(false)}
+                        className="w-full sm:w-auto px-4 py-2 bg-[var(--adm-card-subtle)] hover:bg-[var(--adm-card)] border border-[var(--adm-card-border)] text-[var(--adm-text-primary)] rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyDelay(selectedBooking, delayMinutes, delayReason)}
+                        disabled={isUpdatingBooking}
+                        className="w-full sm:w-auto px-4 py-2 bg-[var(--adm-card-subtle)] hover:bg-[var(--adm-card)] border border-amber-500 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                      >
+                        Apply Status in System
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSendDelayEmail(selectedBooking, delayMinutes, delayReason)}
+                        disabled={isUpdatingBooking}
+                        className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-amber-500/20 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+                      >
+                        <span>✉</span>
+                        <span>Send Email to Client (+{delayMinutes}m)</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

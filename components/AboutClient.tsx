@@ -163,9 +163,9 @@ export default function AboutClient() {
   ];
 
   return (
-    <div className="page-view block">
+    <div className="page-view block overflow-x-clip">
       {/* HERO / STORY SECTION */}
-      <section id="about-hero" className="pt-16 md:pt-24 pb-8">
+      <section id="about-hero" className="pt-16 md:pt-24 pb-8 overflow-hidden">
         <RevealOnMount direction="left">
           <div className="section-eyebrow">
             <TypewriterText
@@ -174,15 +174,15 @@ export default function AboutClient() {
               delay={200}
             />
           </div>
-          <h2 className="section-title">About The Inferno Group</h2>
+          <h1 className="section-title">About The Inferno Group</h1>
           <p className="section-desc">
             Advisors in crisis management, regulatory compliance, and strategic
             public sector business growth.
           </p>
         </RevealOnMount>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-12 mt-12 items-start">
-          <RevealOnMount direction="left" className="about-story-text">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-8 lg:gap-12 mt-12 items-start min-w-0 w-full">
+          <RevealOnMount direction="left" className="about-story-text min-w-0 w-full">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[rgba(225,77,24,0.08)] border border-[rgba(225,77,24,0.2)] text-[var(--primary)] text-xs font-bold uppercase tracking-wider mb-6">
               <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse"></span>
               Origin &amp; Mission Narrative
@@ -250,9 +250,9 @@ export default function AboutClient() {
           {/* Hero Feature Visual Card */}
           <RevealOnMount
             direction="right"
-            className="about-hero-image-wrapper sticky top-[100px]"
+            className="about-hero-image-wrapper lg:sticky lg:top-[100px] min-w-0 w-full max-w-full overflow-hidden"
           >
-            <div className="glow-card rounded-[28px] overflow-hidden border border-[var(--border)] bg-[var(--panel-dark)] shadow-[0_20px_40px_rgba(0,0,0,0.06)] relative flex flex-col">
+            <div className="glow-card rounded-[24px] sm:rounded-[28px] overflow-hidden border border-[var(--border)] bg-[var(--panel-dark)] shadow-[0_20px_40px_rgba(0,0,0,0.06)] relative flex flex-col min-w-0 w-full max-w-full">
               {/* Top Banner Image with Overlay */}
               <div className="relative h-[220px] w-full overflow-hidden bg-[var(--navy)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -343,16 +343,16 @@ export default function AboutClient() {
                 </div>
 
                 {/* Quick Action CTAs */}
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[var(--border)]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[var(--border)]">
                   <Link
                     href="/contact"
-                    className="btn btn-primary text-xs py-2.5 px-4 text-center justify-center no-underline"
+                    className="btn btn-primary text-xs py-2.5 px-3 text-center justify-center no-underline"
                   >
                     Initiate Contact
                   </Link>
                   <Link
                     href="/partnerships"
-                    className="btn btn-secondary text-xs py-2.5 px-4 text-center justify-center no-underline"
+                    className="btn btn-secondary text-xs py-2.5 px-3 text-center justify-center no-underline"
                   >
                     Partner With Us
                   </Link>
@@ -378,7 +378,7 @@ export default function AboutClient() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Link
-                  href="/resources"
+                  href="/capabilities?download=true"
                   className="btn btn-secondary text-xs py-2 px-4 no-underline"
                 >
                   Download Capability Statement

@@ -184,7 +184,7 @@ export const knowledgeBase: KnowledgeBaseItem[] = [
       "checklist",
     ],
     answer:
-      "You can download our official Corporate Capability Statement (TIG-CS-2026), FEMA Public Assistance Formulation Guide, Disaster Helpline SOP Playbook, Teaming Readiness Checklist, and DCAA Indirect Rate Templates directly from our [Resources Library](/resources).",
+      "You can download our official Corporate Capability Statement (PDF) directly from our [Capabilities Portal](/capabilities?download=true) or access guides and playbooks in our [Resources Library](/resources).",
   },
   {
     question: "Schedule a Consultation or Contact Us?",

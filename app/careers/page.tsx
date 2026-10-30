@@ -84,7 +84,7 @@ export default function CareersPage() {
       <section id="careers">
         <RevealOnMount className={`reveal ${isMounted ? "active" : ""}`}>
           <div className="section-eyebrow">Join the Mission</div>
-          <h2 className="section-title">Open Positions</h2>
+          <h1 className="section-title">Open Positions</h1>
           <p className="section-desc mb-4">
             We assemble high-performance teams to coordinate critical disaster
             response programs, federal compliance reviews, and strategic growth.

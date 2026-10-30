@@ -67,32 +67,37 @@ export default function ResourcesPage() {
 
       // Trigger document export
       const element = document.createElement("a");
-      const fileText = `=================================================================\n` +
-                       `THE INFERNO GROUP LLC - INTEL & COMPLIANCE RESOURCE TRANSMISSION\n` +
-                       `=================================================================\n\n` +
-                       `DOCUMENT: ${selectedResource.title}\n` +
-                       `CATEGORY: ${selectedResource.category}\n` +
-                       `FORMAT: ${selectedResource.fileType}\n` +
-                       `AUTHORIZED TO: ${name} (${org})\n` +
-                       `WORK EMAIL: ${email}\n` +
-                       `ISSUED ON: ${new Date().toLocaleDateString()}\n\n` +
-                       `CORPORATE OVERVIEW & CREDENTIALS:\n` +
-                       `• Entity: The Inferno Group LLC\n` +
-                       `• Unique Entity ID (UEI): QW6RHJACHA56\n` +
-                       `• CAGE Code: 22VP2\n` +
-                       `• Status: SBA HUBZone Certified & Veteran-Owned Small Business (VOSB)\n` +
-                       `• Primary NAICS: 541611 (Admin & General Management Consulting)\n` +
-                       `• Secondary NAICS: 624230, 561210, 562910, 238320, 561720, 561790, 238990, 423990, 488510, 561422\n` +
-                       `• Bonding Capacity: Bid, Performance (up to 100%), and Payment (up to 100%)\n\n` +
-                       `DOCUMENT SUMMARY:\n` +
-                       `${selectedResource.description}\n\n` +
-                       `COMPLIANCE & CONTACT:\n` +
-                       `The Inferno Group LLC | Contracts & Alliances\n` +
-                       `Email: Contact@theinfernogroup.com\n` +
-                       `Portal: https://theinfernogroup.com\n`;
-      const file = new Blob([fileText], { type: "text/plain" });
-      element.href = URL.createObjectURL(file);
-      element.download = `${selectedResource.id}_TIG_Compliance_Package.txt`;
+      if (selectedResource.id === "capability-statement") {
+        element.href = "/documents/The_Inferno_Group_LLC_Capability_Statement.pdf";
+        element.download = "The_Inferno_Group_LLC_Capability_Statement.pdf";
+      } else {
+        const fileText = `=================================================================\n` +
+                         `THE INFERNO GROUP LLC - INTEL & COMPLIANCE RESOURCE TRANSMISSION\n` +
+                         `=================================================================\n\n` +
+                         `DOCUMENT: ${selectedResource.title}\n` +
+                         `CATEGORY: ${selectedResource.category}\n` +
+                         `FORMAT: ${selectedResource.fileType}\n` +
+                         `AUTHORIZED TO: ${name} (${org})\n` +
+                         `WORK EMAIL: ${email}\n` +
+                         `ISSUED ON: ${new Date().toLocaleDateString()}\n\n` +
+                         `CORPORATE OVERVIEW & CREDENTIALS:\n` +
+                         `• Entity: The Inferno Group LLC\n` +
+                         `• Unique Entity ID (UEI): QW6RHJACHA56\n` +
+                         `• CAGE Code: 22VP2\n` +
+                         `• Status: SBA HUBZone Certified & Veteran-Owned Small Business (VOSB)\n` +
+                         `• Primary NAICS: 541611 (Admin & General Management Consulting)\n` +
+                         `• Secondary NAICS: 624230, 561210, 562910, 238320, 561720, 561790, 238990, 423990, 488510, 561422\n` +
+                         `• Bonding Capacity: Bid, Performance (up to 100%), and Payment (up to 100%)\n\n` +
+                         `DOCUMENT SUMMARY:\n` +
+                         `${selectedResource.description}\n\n` +
+                         `COMPLIANCE & CONTACT:\n` +
+                         `The Inferno Group LLC | Contracts & Alliances\n` +
+                         `Email: Contact@theinfernogroup.com\n` +
+                         `Portal: https://theinfernogroup.com\n`;
+        const file = new Blob([fileText], { type: "text/plain" });
+        element.href = URL.createObjectURL(file);
+        element.download = `${selectedResource.id}_TIG_Compliance_Package.txt`;
+      }
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
@@ -133,7 +138,7 @@ export default function ResourcesPage() {
       <section id="resources">
         <RevealOnMount className={`reveal ${isMounted ? "active" : ""}`}>
           <div className="section-eyebrow">Intel &amp; Compliance Library</div>
-          <h2 className="section-title">Resources, Playbooks &amp; Guidelines</h2>
+          <h1 className="section-title">Resources, Playbooks &amp; Guidelines</h1>
           <p className="section-desc max-w-[850px] mx-auto">
             Access downloadable compliance playbooks, FEMA Public Assistance checklists, DCAA indirect cost rate templates, and official corporate capability statements.
           </p>

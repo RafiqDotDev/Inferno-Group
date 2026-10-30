@@ -288,9 +288,9 @@ export default function TrackerPage() {
           <div className="section-eyebrow">
             NOAA / NHC Real-Time Intelligence
           </div>
-          <h2 className="section-title">
+          <h1 className="section-title">
             Hurricane Tracker &amp; Intelligence Dashboard
-          </h2>
+          </h1>
           <p className="section-desc">
             Live NOAA National Hurricane Center tracking—featuring forecast
             cones, tropical disturbances, wind radii, and coastal advisories.

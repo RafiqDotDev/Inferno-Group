@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import RevealOnMount from "@/components/RevealOnMount";
-import { dataStore, PartnerCardItem } from "@/utils/dataStore";
+import { partnerCardsData, PartnerCard } from "@/lib/partnerCardsData";
 
 export default function PartnershipsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [partnerCards, setPartnerCards] = useState<PartnerCardItem[]>([]);
+  const partnerCards: PartnerCard[] = partnerCardsData;
 
   // Form states
   const [company, setCompany] = useState("");
@@ -25,76 +25,68 @@ export default function PartnershipsPage() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
-    const refreshCards = () => {
-      setPartnerCards(dataStore.getPartnerCards().filter((c) => c.status === "published"));
-    };
+    // Clean up legacy localStorage key if present
+    try {
+      localStorage.removeItem("inferno_partner_cards_v1");
+    } catch {
+      // ignore in environments without localStorage
+    }
 
-    refreshCards();
     const timer = setTimeout(() => {
       setIsMounted(true);
     }, 50);
 
-    const handleStorage = (e: StorageEvent) => {
-      if (!e.key || e.key === "inferno_partner_cards_v1") {
-        refreshCards();
-      }
-    };
-    const handleCMS = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (!detail || detail.all || detail.key === "inferno_partner_cards_v1") {
-        refreshCards();
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("cms-update", handleCMS);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("cms-update", handleCMS);
     };
   }, []);
 
-  const handlePartnerSubmit = (e: React.FormEvent) => {
+  const handlePartnerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSuccess(true);
-
-      // Save lead and sync to Supabase database
-      void dataStore.submitLead({
-        type: "PARTNER",
-        company,
-        partnerCompany: company,
-        contactName,
-        name: contactName,
-        email,
-        contactEmail: email,
-        phone,
-        uei,
-        naics,
-        partnerType,
-        certStatus,
-        bondingCapacity,
-        message,
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "PARTNER",
+          company,
+          partnerCompany: company,
+          contactName,
+          name: contactName,
+          email,
+          contactEmail: email,
+          phone,
+          uei,
+          naics,
+          service: "Teaming & Partnerships",
+          partnerType,
+          certStatus,
+          bondingCapacity,
+          message,
+        }),
       });
+    } catch (err) {
+      console.warn("Failed to submit partner application:", err);
+    }
 
-      setTimeout(() => {
-        setIsModalOpen(false);
-        setIsSuccess(false);
-        setCompany("");
-        setContactName("");
-        setEmail("");
-        setPhone("");
-        setUei("");
-        setNaics("");
-        setPartnerType("");
-        setCertStatus("");
-        setBondingCapacity("");
-        setMessage("");
-      }, 1500);
+    setIsSubmitting(false);
+    setIsSuccess(true);
+
+    setTimeout(() => {
+      setIsModalOpen(false);
+      setIsSuccess(false);
+      setCompany("");
+      setContactName("");
+      setEmail("");
+      setPhone("");
+      setUei("");
+      setNaics("");
+      setPartnerType("");
+      setCertStatus("");
+      setBondingCapacity("");
+      setMessage("");
     }, 1500);
   };
 
@@ -105,7 +97,7 @@ export default function PartnershipsPage() {
           className={`reveal text-center ${isMounted ? "active" : ""}`}
         >
           <div className="section-eyebrow">Partners &amp; Subcontractors</div>
-          <h2 className="section-title">Built to Partner. Ready to Perform.</h2>
+          <h1 className="section-title">Built to Partner. Ready to Perform.</h1>
           <p className="section-desc max-w-[850px] mx-auto mb-8 leading-[1.8]">
             We partner with qualified subcontractors, specialty trades,
             consultants, suppliers, and emerging businesses to deliver
@@ -433,17 +425,17 @@ export default function PartnershipsPage() {
           </div>
 
           {/* Become a TIG Partner CTA */}
-          <div className="text-center bg-gradient-to-r from-[rgba(225,77,24,0.1)] via-[rgba(13,27,61,0.9)] to-[var(--navy)] text-white border border-[rgba(225,77,24,0.3)] rounded-[28px] p-10 md:p-12 shadow-xl">
+          <div className="text-center bg-gradient-to-r from-[#0c1838] via-[#102048] to-[var(--navy)] text-white border border-[rgba(225,77,24,0.35)] rounded-[28px] p-10 md:p-12 shadow-2xl">
             <h3 className="font-[family-name:var(--font-space-grotesk)] text-[1.8rem] md:text-[2.2rem] font-bold text-white mb-3">
               Become a TIG Partner
             </h3>
-            <p className="text-sm md:text-base text-slate-300 max-w-[720px] mx-auto mb-6 leading-[1.7]">
+            <p className="text-sm md:text-base text-slate-200 max-w-[720px] mx-auto mb-6 leading-[1.7]">
               If your organization can bring specialized capability, competitive
               pricing, geographic reach, technical expertise, products, labor,
               equipment, or professional services to our projects, we welcome
               the opportunity to connect.
             </p>
-            <p className="font-[family-name:var(--font-space-grotesk)] text-lg md:text-xl font-extrabold text-[var(--primary)] mb-8 tracking-wider">
+            <p className="font-[family-name:var(--font-space-grotesk)] text-lg md:text-xl font-extrabold text-amber-300 mb-8 tracking-wider">
               &ldquo;Build with us. Respond with us. Deliver with us.&rdquo;
             </p>
             <button
@@ -548,6 +540,8 @@ export default function PartnershipsPage() {
                       placeholder=" "
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}"
+                      title="Please provide a valid email address (e.g. name@company.com)"
                       required
                     />
                     <label htmlFor="partner-email" className="form-label">
@@ -562,6 +556,9 @@ export default function PartnershipsPage() {
                       placeholder=" "
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
+                      pattern="^\+?[0-9\s\-\(\)]{7,15}$"
+                      inputMode="tel"
+                      title="Please provide a valid phone number"
                     />
                     <label htmlFor="partner-phone" className="form-label">
                       Phone Number (Optional)
@@ -574,10 +571,13 @@ export default function PartnershipsPage() {
                     <input
                       type="text"
                       id="partner-uei"
-                      className="form-input"
+                      className="form-input uppercase"
                       placeholder=" "
                       value={uei}
-                      onChange={(e) => setUei(e.target.value)}
+                      onChange={(e) => setUei(e.target.value.toUpperCase())}
+                      maxLength={12}
+                      pattern="[A-Za-z0-9]{5,12}"
+                      title="12-character alphanumeric Unique Entity ID or 5-character CAGE code"
                     />
                     <label htmlFor="partner-uei" className="form-label">
                       Unique Entity ID (UEI / CAGE)
@@ -591,6 +591,10 @@ export default function PartnershipsPage() {
                       placeholder=" "
                       value={naics}
                       onChange={(e) => setNaics(e.target.value)}
+                      maxLength={6}
+                      pattern="[0-9]{6}"
+                      inputMode="numeric"
+                      title="Primary 6-digit NAICS code (e.g. 541611)"
                       required
                     />
                     <label htmlFor="partner-naics" className="form-label">

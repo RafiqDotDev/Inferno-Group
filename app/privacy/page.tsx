@@ -56,7 +56,7 @@ export default function PrivacyPage() {
       <section id="privacy-policy" className="max-w-[800px] mx-auto py-16 px-8">
         <RevealOnMount>
           <div className="section-eyebrow">Regulatory Compliance</div>
-          <h2 className="section-title">{privacy.title}</h2>
+          <h1 className="section-title">{privacy.title}</h1>
           <p className="section-desc mb-12">
             The Inferno Group LLC data encryption protocols and PII protection standard parameters.
           </p>

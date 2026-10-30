@@ -114,10 +114,18 @@ export default function Footer() {
           <h4 className="footer-title">Federal Credentials</h4>
           <div className="footer-meta text-xs space-y-1.5">
             <div>
-              <strong className="text-[var(--navy)]">UEI:</strong> {settings?.uei || "QW6RHJACHA56"}
+              <strong className="text-[var(--navy)]">UEI:</strong>{" "}
+              {settings?.uei && settings.uei !== "22VP2"
+                ? settings.uei
+                : "QW6RHJACHA56"}
             </div>
             <div>
-              <strong className="text-[var(--navy)]">Cage Code:</strong> {settings?.cageCode || "22VP2"}
+              <strong className="text-[var(--navy)]">Cage Code:</strong>{" "}
+              {settings?.cageCode &&
+              settings.cageCode !== "9H2E1" &&
+              settings.cageCode !== "8XYZ1"
+                ? settings.cageCode
+                : "22VP2"}
             </div>
             <div>
               <strong className="text-[var(--navy)]">Primary NAICS:</strong>{" "}

@@ -136,7 +136,7 @@ export default function QuizPage() {
       <section id="quiz">
         <div className={`reveal ${isMounted ? "active" : ""}`}>
           <div className="section-eyebrow">Interactive Assessment</div>
-          <h2 className="section-title">Certification Eligibility Quiz</h2>
+          <h1 className="section-title">Certification Eligibility Quiz</h1>
           <p className="section-desc">
             Analyze your business parameters against local, state, and federal socioeconomic set-aside frameworks.
           </p>
@@ -250,6 +250,8 @@ export default function QuizPage() {
                     placeholder=" "
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}"
+                    title="Please enter a valid work email address"
                     required
                   />
                   <label htmlFor="quiz-email" className="form-label">Work Email</label>

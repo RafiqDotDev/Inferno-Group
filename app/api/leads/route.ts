@@ -4,6 +4,20 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET() {
   try {
     const supabase = await createClient();
+
+    // BUG-01: Protect endpoint - require authenticated user session
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized access. Authentication required." },
+        { status: 401 }
+      );
+    }
+
     const { data, error } = await supabase
       .from("settings")
       .select("value")
@@ -36,24 +50,81 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const body = await request.json();
 
-    if (!body || typeof body !== "object") {
-      return NextResponse.json({ success: false, error: "Invalid lead payload." }, { status: 400 });
+    // BUG-03: Empty or invalid payload rejection
+    if (!body || typeof body !== "object" || Object.keys(body).length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Empty or invalid lead payload." },
+        { status: 400 }
+      );
     }
 
+    const email = (body.email || body.contactEmail || "").trim();
+    const name = (body.name || body.contactName || "").trim();
+    const phone = (body.phone || "").trim();
+    const uei = (body.uei || "").trim();
+    const naics = (body.naics || "").trim();
+
+    // Required fields check
+    if (!email || !name) {
+      return NextResponse.json(
+        { success: false, error: "Name and a valid email address are required." },
+        { status: 400 }
+      );
+    }
+
+    // BUG-05: Strict Email Format Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { success: false, error: "Please provide a valid email address." },
+        { status: 400 }
+      );
+    }
+
+    // BUG-05: Phone format validation (if provided)
+    if (phone) {
+      const phoneDigits = phone.replace(/[\s\-\(\)\+\.]/g, "");
+      if (!/^\d{7,15}$/.test(phoneDigits)) {
+        return NextResponse.json(
+          { success: false, error: "Please provide a valid telephone number." },
+          { status: 400 }
+        );
+      }
+    }
+
+    // BUG-05: UEI format validation (if provided: 12 alphanumeric, or 5-char CAGE)
+    if (uei && !/^[A-Za-z0-9]{12}$/.test(uei) && !/^[A-Za-z0-9]{5}$/.test(uei)) {
+      return NextResponse.json(
+        { success: false, error: "UEI must be 12 alphanumeric characters (or 5-character CAGE)." },
+        { status: 400 }
+      );
+    }
+
+    // BUG-05: NAICS format validation (if provided: 6 digits)
+    if (naics && !/^\d{6}$/.test(naics)) {
+      return NextResponse.json(
+        { success: false, error: "Primary NAICS code must be 6 digits." },
+        { status: 400 }
+      );
+    }
+
+    // Server-enforced lead structure: client cannot forge id, status, adminNotes, or createdAt
     const newLead = {
-      id: body.id || `lead-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: `lead-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       type: body.type || "contact",
-      name: body.name || body.contactName || "Portal Inquirer",
-      contactName: body.contactName || body.name,
-      email: body.email || body.contactEmail || "",
-      contactEmail: body.contactEmail || body.email,
-      phone: body.phone || "",
-      company: body.company || body.org || body.partnerCompany || "",
-      partnerCompany: body.partnerCompany || body.company,
-      org: body.org || body.company,
+      name,
+      contactName: name,
+      email,
+      contactEmail: email,
+      phone,
+      company: (body.company || body.org || body.partnerCompany || "").trim(),
+      partnerCompany: (body.partnerCompany || body.company || "").trim(),
+      org: (body.org || body.company || "").trim(),
       service: body.service || "",
       message: body.message || body.notes || "",
       notes: body.notes || body.message || "",
+      uei,
+      naics,
       jobId: body.jobId,
       jobTitle: body.jobTitle,
       cover: body.cover,
@@ -87,9 +158,9 @@ export async function POST(request: NextRequest) {
       attestationConfirmed: body.attestationConfirmed ?? body.applicationDetails?.attestationConfirmed,
       cityStateZip: body.cityStateZip || body.applicationDetails?.cityStateZip,
       linkedinUrl: body.linkedinUrl || body.applicationDetails?.linkedinUrl,
-      status: body.status || "new",
-      adminNotes: body.adminNotes || "",
-      createdAt: body.createdAt || new Date().toISOString(),
+      status: "new",
+      adminNotes: "",
+      createdAt: new Date().toISOString(),
     };
 
     // 1. Fetch current leads
@@ -136,6 +207,20 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const supabase = await createClient();
+
+    // Authenticated admin required to update lead status/notes
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized access. Authentication required." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { id, status, adminNotes } = body;
 
@@ -189,6 +274,20 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
+
+    // Authenticated admin required to delete lead records
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized access. Authentication required." },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 

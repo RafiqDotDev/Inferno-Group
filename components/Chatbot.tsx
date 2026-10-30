@@ -9,6 +9,7 @@ import { dataStore } from "@/utils/dataStore";
 export default function Chatbot() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
   const [qaList, setQaList] = useState<KnowledgeBaseItem[]>(knowledgeBase);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -196,7 +197,10 @@ export default function Chatbot() {
       {/* Floating Action Button */}
       <button
         className={`chatbot-fab ${isOpen ? "open" : ""}`}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setHasOpened(true);
+          setIsOpen(!isOpen);
+        }}
         aria-label="Toggle AI Assistant"
       >
         {isOpen ? (
@@ -230,7 +234,10 @@ export default function Chatbot() {
       </button>
 
       {/* Chat Window Panel */}
-      <div className={`chatbot-window ${isOpen ? "open" : ""}`}>
+      <div
+        className={`chatbot-window ${isOpen ? "open" : ""}`}
+        style={!hasOpened && !isOpen ? { display: "none" } : undefined}
+      >
         {/* Header */}
         <div className="chat-header">
           <div>
@@ -342,7 +349,8 @@ export default function Chatbot() {
           bottom: 5.5rem;
           right: 2rem;
           width: 390px;
-          height: 550px;
+          height: min(550px, calc(100dvh - 6.5rem));
+          max-height: calc(100dvh - 6.5rem);
           border-radius: 16px;
           background: #ffffff;
           border: 1px solid var(--border);
@@ -517,6 +525,14 @@ export default function Chatbot() {
           50% {
             transform: translateY(-4px);
             opacity: 1;
+          }
+        }
+
+        @media (max-height: 640px) {
+          .chatbot-window {
+            height: calc(100dvh - 5.5rem);
+            max-height: calc(100dvh - 5.5rem);
+            bottom: 4.5rem;
           }
         }
 

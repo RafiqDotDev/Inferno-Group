@@ -105,14 +105,15 @@ export default function CalendarPage() {
     fetchLiveSlots();
   }, [fetchLiveSlots]);
 
-  // Filter slots for currently selected date
+  // Filter slots for currently selected date in the selected timezone
   const getSlotsForSelectedDate = () => {
     if (!selectedDate || !slots.length) return [];
     
-    const targetDateStr = selectedDate.toDateString();
+    const tzName = getTimeZoneIANAName(timezone);
+    const targetDateStr = selectedDate.toLocaleDateString("en-US", { timeZone: tzName });
     return slots.filter((slot) => {
       const slotDate = new Date(slot.start_time);
-      return slotDate.toDateString() === targetDateStr;
+      return slotDate.toLocaleDateString("en-US", { timeZone: tzName }) === targetDateStr;
     });
   };
 
@@ -251,7 +252,7 @@ export default function CalendarPage() {
       <section id="calendar">
         <div className={`reveal ${isMounted ? "active" : ""}`}>
           <div className="section-eyebrow">Alliances &amp; Contracting</div>
-          <h2 className="section-title">Operations Booking Window</h2>
+          <h1 className="section-title">Operations Booking Window</h1>
           <p className="section-desc">
             Coordinate availability grids and schedule direct consultations with contracting desk officers.
           </p>

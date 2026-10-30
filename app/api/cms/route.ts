@@ -8,6 +8,11 @@ export async function GET(request: NextRequest) {
     const key = searchParams.get("key");
 
     if (key) {
+      // Sensitive user data is strictly forbidden from the public CMS endpoint
+      if (key === "inferno_leads" || key.includes("lead") || key.includes("booking") || key.includes("applicant")) {
+        return NextResponse.json({ success: false, error: "Access denied." }, { status: 403 });
+      }
+
       const { data, error } = await supabase
         .from("settings")
         .select("key, value")
@@ -31,8 +36,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, key, value: parsedValue });
     }
 
-    // Fetch all CMS settings and collections in one query
-    const { data, error } = await supabase.from("settings").select("key, value");
+    // Fetch all public CMS settings and collections in one query (strictly excluding sensitive user leads)
+    const { data, error } = await supabase
+      .from("settings")
+      .select("key, value")
+      .neq("key", "inferno_leads");
 
     if (error) {
       console.error("Supabase GET all error:", error);
@@ -42,7 +50,7 @@ export async function GET(request: NextRequest) {
     const result: Record<string, any> = {};
     if (Array.isArray(data)) {
       for (const row of data) {
-        if (!row.key) continue;
+        if (!row.key || row.key === "inferno_leads" || row.key.includes("lead") || row.key.includes("booking")) continue;
         try {
           result[row.key] = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
         } catch {

@@ -44,6 +44,12 @@ export default function RootLayout({
           while Tailwind was unwired; leaving them would switch body to flex and
           move the footer on short pages, so they are intentionally omitted. */}
       <body>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:py-2.5 focus:px-4 focus:bg-[var(--primary)] focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-xl focus:outline-none"
+        >
+          Skip to main content
+        </a>
         <CMSRealtimeProvider />
         {/* BACKGROUND OVERLAYS */}
         <div className="grid-bg"></div>
@@ -52,7 +58,7 @@ export default function RootLayout({
 
         <TrackerAlert />
         <Navbar />
-        <main>{children}</main>
+        <main id="main-content">{children}</main>
         <Footer />
         <Chatbot />
       </body>

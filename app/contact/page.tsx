@@ -196,6 +196,8 @@ function ContactFormInner() {
             placeholder=" "
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}"
+            title="Please enter a valid work email address"
             required
           />
           <label htmlFor="form-email" className="form-label">
@@ -211,6 +213,9 @@ function ContactFormInner() {
             placeholder=" "
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
+            pattern="^\+?[0-9\s\-\(\)]{7,15}$"
+            inputMode="tel"
+            title="Please enter a valid telephone number"
           />
           <label htmlFor="form-phone" className="form-label">
             Phone Number (Optional)
@@ -356,11 +361,11 @@ export default function ContactPage() {
             className={`contact-info-panel reveal ${isMounted ? "active" : ""}`}
           >
             <div className="section-eyebrow">Get In Touch</div>
-            <h2>
+            <h1>
               Ready to Move?
               <br />
               Let&apos;s Connect.
-            </h2>
+            </h1>
             <p>
               Whether targeting set-aside contracts, organizing emergency
               programs, or establishing strategic joint ventures, our advisory

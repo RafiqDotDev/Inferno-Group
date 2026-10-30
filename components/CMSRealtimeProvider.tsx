@@ -40,6 +40,17 @@ export default function CMSRealtimeProvider() {
           { event: "*", schema: "public", table: "settings" },
           (payload: any) => {
             if (payload.new && payload.new.key) {
+              const key = payload.new.key;
+              // STRICT SECURITY CHECK: Never write user leads, bookings, or private user data to localStorage
+              if (
+                key === "inferno_leads" ||
+                key.includes("lead") ||
+                key.includes("booking") ||
+                key.includes("applicant")
+              ) {
+                return;
+              }
+
               try {
                 const val =
                   typeof payload.new.value === "string"

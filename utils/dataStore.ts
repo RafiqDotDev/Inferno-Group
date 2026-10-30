@@ -284,8 +284,8 @@ const defaultSiteSettings: SiteSettings = {
   communityEmail: "InfernoCares@theinfernogroup.com",
   address: "Orlando, Florida (Nationwide Deployments)",
   coordinationWindow: "Response within 12 business hours",
-  uei: "22VP2",
-  cageCode: "8XYZ1",
+  uei: "QW6RHJACHA56",
+  cageCode: "22VP2",
   primaryNaics: "541611",
   linkedinUrl: "https://linkedin.com",
   twitterUrl: "https://x.com",
@@ -1399,8 +1399,48 @@ const defaultHero: HeroData = {
 // In-memory storage fallback to prevent crashes in iOS Safari Private Browsing mode or under strict privacy constraints
 const memoryFallbackStorage: Record<string, string> = {};
 
+// SENSITIVE KEYS: Strict security guarantee - user leads, inquiries, bookings, and PII are NEVER stored in localStorage
+const SENSITIVE_STORAGE_KEYS = new Set([
+  "inferno_leads",
+  "inferno_bookings",
+  "inferno_applications",
+  "inferno_subcontractors",
+]);
+
+// Proactive purge on client initialization to remove any legacy keys
+if (typeof window !== "undefined") {
+  try {
+    localStorage.removeItem("inferno_leads");
+    localStorage.removeItem("inferno_bookings");
+    localStorage.removeItem("inferno_applications");
+    localStorage.removeItem("inferno_partner_cards_v1");
+  } catch {
+    // ignore
+  }
+}
+
+function isSensitiveKey(key: string): boolean {
+  return (
+    SENSITIVE_STORAGE_KEYS.has(key) ||
+    key.includes("lead") ||
+    key.includes("booking") ||
+    key.includes("applicant")
+  );
+}
+
 function safeGetStorage(key: string): string | null {
   if (typeof window === "undefined") return null;
+
+  // Sensitive user data is strictly memory-only
+  if (isSensitiveKey(key)) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
+    return memoryFallbackStorage[key] ?? null;
+  }
+
   try {
     return localStorage.getItem(key);
   } catch {
@@ -1410,6 +1450,18 @@ function safeGetStorage(key: string): string | null {
 
 function safeSetStorage(key: string, value: string): void {
   if (typeof window === "undefined") return;
+
+  // Never write user leads, submissions, or sensitive user data into localStorage
+  if (isSensitiveKey(key)) {
+    memoryFallbackStorage[key] = value;
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
+    return;
+  }
+
   try {
     localStorage.setItem(key, value);
   } catch {
@@ -1423,7 +1475,6 @@ function getStoreItem<T>(key: string, defaultValue: T): T {
   }
   const stored = safeGetStorage(key);
   if (!stored) {
-    safeSetStorage(key, JSON.stringify(defaultValue));
     return defaultValue;
   }
   try {
@@ -1671,11 +1722,18 @@ export const dataStore = {
   saveChatbotQA: (qa: KnowledgeBaseItem[]): void =>
     setStoreItem<KnowledgeBaseItem[]>("inferno_chatbot_qa_v1", qa),
 
-  // Leads & Inbound Submissions
-  getLeads: (): AdminLead[] =>
-    getStoreItem<AdminLead[]>("inferno_leads", []),
-  saveLeads: (leads: AdminLead[]): void =>
-    setStoreItem<AdminLead[]>("inferno_leads", leads),
+  // Leads & Inbound Submissions (in-memory only, strictly segregated from CMS settings)
+  getLeads: (): AdminLead[] => {
+    try {
+      const stored = safeGetStorage("inferno_leads");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  },
+  saveLeads: (leads: AdminLead[]): void => {
+    safeSetStorage("inferno_leads", JSON.stringify(leads));
+  },
 
   // Legal Pages
   getLegalPrivacy: (): LegalPage =>
@@ -1808,8 +1866,9 @@ export const dataStore = {
           return { success: true, count: 0 };
         }
 
-        // Hydrate localStorage with remote values
+        // Hydrate localStorage with remote values (non-sensitive CMS keys only)
         for (const [k, v] of Object.entries(remoteData)) {
+          if (isSensitiveKey(k)) continue;
           if (v !== undefined && v !== null) {
             safeSetStorage(k, JSON.stringify(v));
           }
@@ -1820,11 +1879,7 @@ export const dataStore = {
         try {
           window.dispatchEvent(new StorageEvent("storage", { key: null }));
         } catch {
-          try {
-          window.dispatchEvent(new StorageEvent("storage", { key: "inferno_leads" }));
-        } catch {
           window.dispatchEvent(new Event("storage"));
-        }
         }
         return { success: true, count: keys.length };
       }
@@ -1863,7 +1918,6 @@ export const dataStore = {
         { key: "inferno_legal_privacy_v2", value: dataStore.getLegalPrivacy() },
         { key: "inferno_legal_conduct_v2", value: dataStore.getLegalConduct() },
         { key: "inferno_hero_v5", value: dataStore.getHero() },
-        { key: "inferno_leads", value: dataStore.getLeads() },
       ];
 
       const res = await fetch("/api/cms", {
@@ -1934,23 +1988,7 @@ export const dataStore = {
       createdAt: lead.createdAt || new Date().toISOString(),
     };
 
-    // 1. Immediately store in local storage for zero latency
-    if (typeof window !== "undefined") {
-      try {
-        const current = dataStore.getLeads();
-        const updated = [newLead, ...current.filter((l) => l.id !== newLead.id)];
-        safeSetStorage("inferno_leads", JSON.stringify(updated));
-        try {
-          window.dispatchEvent(new StorageEvent("storage", { key: "inferno_leads" }));
-        } catch {
-          window.dispatchEvent(new Event("storage"));
-        }
-      } catch {
-        // ignore storage error
-      }
-    }
-
-    // 2. Persist to Supabase database via API
+    // Persist to Supabase database via API
     try {
       await fetch("/api/leads", {
         method: "POST",

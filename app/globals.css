@@ -49,7 +49,7 @@
     --navy-rgb: 13, 27, 61;
 
     --text-bright: #111827;
-    --text-muted: #6b7280;
+    --text-muted: #4b5563;
     --border: #e5e7eb;
     --border-hover: #d1d5db;
     --glass: rgba(255, 255, 255, 0.95);
@@ -155,9 +155,9 @@
   nav.scrolled,
   nav.hero-nav-transparent.scrolled {
     padding: 0.85rem max(5vw, calc((100vw - 1440px) / 2 + 5vw));
-    background: rgba(255, 255, 255, 0.96) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
+    background: rgba(255, 255, 255, 0.985) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
     border-bottom: 1px solid var(--border) !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
   }
@@ -202,6 +202,7 @@
     text-decoration: none;
     position: relative;
     padding: 0.25rem 0;
+    white-space: nowrap;
     transition: var(--transition-base);
   }
   .nav-links a.nav-item:hover,
@@ -1716,20 +1717,20 @@
   /* ── DESKTOP COMPACT (1025px - 1280px) ── */
   @media (min-width: 1025px) and (max-width: 1280px) {
     nav#navbar {
-      padding: 0.9rem 3.5vw;
+      padding: 0.85rem 2.5vw;
     }
     .nav-links {
-      gap: 1.15rem;
+      gap: 0.95rem;
     }
     .nav-links a.nav-item {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
     }
     .nav-dropdown-trigger {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
     }
     .nav-cta {
-      padding: 0.5rem 1.1rem;
-      font-size: 0.82rem;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.8rem;
     }
   }
 
@@ -1989,6 +1990,7 @@
     border: none;
     cursor: pointer;
     padding: 0.25rem 0;
+    white-space: nowrap;
     display: flex;
     align-items: center;
     gap: 0.35rem;
@@ -2228,9 +2230,7 @@
     pointer-events: auto;
   }
   .modal-content {
-    background: var(--glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: #ffffff !important;
     border: 1px solid var(--border);
     border-radius: 20px;
     width: 100%;
@@ -2693,5 +2693,17 @@
   .partner-card:hover .partner-card-icon {
     transform: scale(1.15) rotate(5deg);
     background-color: rgba(225, 77, 24, 0.15) !important;
+  }
+
+  /* Chatbot window base state to prevent FOUC and initial mount opening flash */
+  .chatbot-window {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .chatbot-window.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 } /* ── end @layer base ── */

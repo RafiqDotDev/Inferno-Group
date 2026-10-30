@@ -144,9 +144,9 @@ export default function ContractsPage() {
             <div className="section-eyebrow">
               B2G &amp; Public Sector Opportunities
             </div>
-            <h2 className="section-title">
+            <h1 className="section-title">
               Active Government Contracts &amp; Pursuits
-            </h2>
+            </h1>
             <p className="section-desc max-w-[820px]">
               Federal, state, and regional emergency management and consulting
               solicitations matching The Inferno Group LLC&apos;s registered
@@ -389,7 +389,7 @@ export default function ContractsPage() {
                 Register as Teaming Partner
               </Link>
               <Link
-                href="/capabilities"
+                href="/capabilities?download=true"
                 className="btn btn-secondary py-2.5 px-6 text-xs no-underline"
               >
                 Download Capability Statement

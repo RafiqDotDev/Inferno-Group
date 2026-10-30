@@ -51,7 +51,7 @@ export default function NewsPage() {
       <section id="news">
         <RevealOnMount className={`reveal ${isMounted ? "active" : ""}`}>
           <div className="section-eyebrow">Firm Intel &amp; Bulletins</div>
-          <h2 className="section-title">News, Insights &amp; Operational Bulletins</h2>
+          <h1 className="section-title">News, Insights &amp; Operational Bulletins</h1>
           <p className="section-desc max-w-[850px] mx-auto">
             Briefings on FEMA Public Assistance, SBA HUBZone &amp; VOSB contracting, DCAA compliance, and Inferno Cares community initiatives.
           </p>

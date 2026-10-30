@@ -162,7 +162,7 @@ export default function ServicesPage() {
       <section id="services">
         <RevealOnMount className={`reveal ${isMounted ? "active" : ""}`}>
           <div className="section-eyebrow">Services Directory</div>
-          <h2 className="section-title">Government &amp; Commercial Solutions</h2>
+          <h1 className="section-title">Government &amp; Commercial Solutions</h1>
           <p className="section-desc">
             Full-lifecycle emergency management and federal grant compliance, paired with strategic growth and revenue advisory for independent and small businesses.
           </p>

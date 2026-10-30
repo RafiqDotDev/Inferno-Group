@@ -96,6 +96,13 @@ export default function Navbar() {
     setIsCtaDropdownOpen(false);
   };
 
+  const handleNavClick = (href: string) => {
+    closeMenu();
+    if (pathname === href) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "About Us", href: "/about" },
@@ -132,7 +139,7 @@ export default function Navbar() {
         href="/"
         className="nav-logo"
         aria-label="The Inferno Group home"
-        onClick={closeMenu}
+        onClick={() => handleNavClick("/")}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.png" alt="The Inferno Group Logo" />
@@ -165,7 +172,7 @@ export default function Navbar() {
               <Link
                 href={link.href}
                 className={`nav-item ${isActive ? "active" : ""}`}
-                onClick={closeMenu}
+                onClick={() => handleNavClick(link.href)}
               >
                 {link.name}
               </Link>
